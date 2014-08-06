@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="." default="help" name="processMovs">
+    
+    <target name="help">
+        <echo>USAGE:</echo>
+        <echo>ant musicXMLPartToTime -Dfreidi.in=INPUT_MUSICXML -Dfreidi.out=OUTPUT_MUSICXML</echo>
+        <echo>ant musicXMLToMEI -Dfreidi.in=INPUT_MUSICXML -Dfreidi.out=OUTPUT_MEI</echo>
+        <echo>ant improveMusic -Dfreidi.in=INPUT_MEI -Dfreidi.out=OUTPUT_MEI -Dfreidi.mov.id=MOV_ID</echo>
+        <echo>ant includeMusicInCore -Dfreidi.in=INPUT_MEI -Dfreidi.core=CORE_MEI -Dfreidi.core.tmp=TMP_CORE_MEI -Dfreidi.blueprint=BLUEPRINT_MEI -Dfreidi.mov.id=MOV_ID</echo>
+        <echo>ant includeMusicInSources -Dfreidi.blueprint=BLUEPRINT_MEI -Dfreidi.source.dir=SOURCES_DIR -Dfreidi.mov.id=MOV_ID</echo>
+    </target>
+    
+    <target name="musicXMLPartToTime">
+        
+        <available file="${freidi.in}" property="freidi.in.exists"/>
+        
+        <fail unless="freidi.in" message="Parameter freidi.in is missing"/>
+        <fail unless="freidi.out" message="Parameter freidi.out is missing"/>
+        
+        <fail message="File ${freidi.in} does not exist, is empty or not readable" unless="freidi.in.exists"/>
+                    
+        <xslt in="${freidi.in}"
+            out="${freidi.out}"
+            force="true"
+            style="02 MusicXML partwise to timewise/MusicXML_parttime.xsl"/>
+    </target>
+    
+    <target name="musicXMLToMEI">
+
+        <available file="${freidi.in}" property="freidi.in.exists"/>
+        
+        <fail unless="freidi.in" message="Parameter freidi.in is missing"/>
+        <fail unless="freidi.out" message="Parameter freidi.out is missing"/>
+        
+        <fail message="File ${freidi.in} does not exist, is empty or not readable" unless="freidi.in.exists"/>
+        
+        <xslt in="${freidi.in}"
+            out="${freidi.out}"
+            force="true"
+            style="03 MusicXML to MEI/musicxml2mei-3.0.xsl"/>
+    </target>
+    
+    <target name="improveMusic">
+        
+        <available file="${freidi.in}" property="freidi.in.exists"/>
+        
+        <fail unless="freidi.in" message="Parameter freidi.in is missing"/>
+        <fail unless="freidi.out" message="Parameter freidi.out is missing"/>
+        <fail unless="freidi.mov.id" message="Parameter freidi.mov.id is missing"/>
+        
+        <fail message="File ${freidi.in} does not exist, is empty or not readable" unless="freidi.in.exists"/>
+        
+        <xslt in="${freidi.in}"
+            out="${freidi.out}"
+            force="true"
+            style="04 MEI cleaning/improveMusic.xsl">
+            <param name="movID" expression="${freidi.mov.id}"/>
+        </xslt>
+    </target>
+    
+    <target name="includeMusicInCore">
+        
+        <available file="${freidi.in}" property="freidi.in.exists"/>
+        <available file="${freidi.core}" property="freidi.core.exists"/>
+        
+        <fail unless="freidi.in" message="Parameter freidi.in is missing"/>
+        <fail unless="freidi.core" message="Parameter freidi.core is missing"/>
+        <fail unless="freidi.blueprint" message="Parameter freidi.blueprint is missing"/>
+        <fail unless="freidi.mov.id" message="Parameter freidi.mov.id is missing"/>
+        
+        <fail message="File ${freidi.in} does not exist, is empty or not readable" unless="freidi.in.exists"/>
+        <fail message="File ${freidi.core} does not exist, is empty or not readable" unless="freidi.core.exists"/>
+        
+        <xslt in="${freidi.core}"
+            out="${freidi.core.tmp}"
+            force="true"
+            style="05.1 Include Music in Core/includeMusic2core.xsl">
+            <param name="musicDoc" expression="${freidi.in}"/>
+            <param name="targetMov" expression="${freidi.mov.id}"/>
+            <param name="bluePrintfile" expression="${freidi.blueprint}"/>
+        </xslt>
+    </target>
+    
+    <target name="includeMusicInSources">
+        
+        <available  file="${freidi.source.dir}" property="freidi.source.dir.exists"/>
+        <available file="${freidi.blueprint}" property="freidi.blueprint.exists"/>
+        
+        <fail unless="freidi.blueprint" message="Parameter freidi.blueprint is missing"/>
+        <fail unless="freidi.source.dir" message="Parameter freidi.source.dir is missing"/>
+        <fail unless="freidi.mov.id" message="Parameter freidi.mov.id is missing"/>
+        
+        <fail message="File ${freidi.source.dir} does not exist" unless="freidi.source.dir.exists"/>
+        <fail message="File ${freidi.blueprint} does not exist, is empty or not readable" unless="freidi.blueprint.exists"/>
+        
+        <xslt basedir="${freidi.source.dir}" destdir="${freidi.source.dir}_" extension=".xml" includes="**/*.xml"
+            force="true"
+            style="05.2 Include Music in Sources/includeMusic2source.xsl">
+            <param name="path" expression="${freidi.blueprint}"/>
+            <param name="movNo" expression="${freidi.mov.id}"/>
+        </xslt>
+    </target>
+    
+</project>

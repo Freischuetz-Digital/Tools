@@ -29,6 +29,13 @@
     
     <xd:doc scope="component">
         <xd:desc>
+            <xd:p>Parameter for mdiv id</xd:p>
+        </xd:desc>
+    </xd:doc>
+    <xsl:param name="movID"/>
+    
+    <xd:doc scope="component">
+        <xd:desc>
             <xd:p>Cache all measures in a variable named $measures</xd:p>
         </xd:desc>
     </xd:doc>
@@ -90,6 +97,39 @@
             <xsl:next-match/>
         </xsl:if>
     </xsl:template>
+    
+    <xd:doc scope="component">
+        <xd:desc>
+            <xd:p>in mode="lastRun" mei:mdiv with id</xd:p>
+        </xd:desc>
+    </xd:doc>
+    <xsl:template match="mei:mdiv" mode="lastRun">
+        <xsl:copy>
+            <xsl:attribute name="xml:id" select="$movID"/>
+            <xsl:apply-templates select="@* | node()" mode="#current"/>
+        </xsl:copy>
+    </xsl:template>
+    
+    <xd:doc scope="component">
+        <xd:desc>
+            <xd:p>in mode="lastRun" remove @type[contains='generated']</xd:p>
+        </xd:desc>
+    </xd:doc>
+    <xsl:template match="@type[contains(., 'generated')]" mode="lastRun"/>
+    
+    <xd:doc scope="component">
+        <xd:desc>
+            <xd:p>in mode="lastRun" remove @type[contains='sharesLayer']</xd:p>
+        </xd:desc>
+    </xd:doc>
+    <xsl:template match="@type[contains(., 'sharesLayer')]" mode="lastRun"/>
+    
+    <xd:doc scope="component">
+        <xd:desc>
+            <xd:p>in mode="lastRun" remove @subtype</xd:p>
+        </xd:desc>
+    </xd:doc>
+    <xsl:template match="@subtype" mode="lastRun"/>
     
     <xd:doc scope="component">
         <xd:desc>in mode="lastRun" mei:fTrem elements are not being processed any further</xd:desc>
@@ -490,7 +530,7 @@
                         <xsl:copy-of select="$childs/@dots[1]"/>
                     </xsl:if>
                     <xsl:attribute name="measperf" select="$childs[1]/@dur"/>
-                    <xsl:attribute name="slashes" select="number($childs[1]/@dur) div 8"/>
+                    <xsl:attribute name="slash" select="number($childs[1]/@dur) div 8"/>
                     <xsl:attribute name="type" select="'generated'"/>
                     <xsl:attribute name="tempRef" select="$tupletSpan/@xml:id"/>
                     <xsl:apply-templates select="$childs" mode="#current">
