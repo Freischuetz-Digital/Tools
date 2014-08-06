@@ -74,7 +74,7 @@
         <xslt in="${freidi.core}"
             out="${freidi.core.tmp}"
             force="true"
-            style="05.1 Include Music in Core/includeMusic2core.xsl">
+            style="06.1 Include Music in Core/includeMusic2core.xsl">
             <param name="musicDoc" expression="${freidi.in}"/>
             <param name="targetMov" expression="${freidi.mov.id}"/>
             <param name="bluePrintfile" expression="${freidi.blueprint}"/>
@@ -95,7 +95,7 @@
         
         <xslt basedir="${freidi.source.dir}" destdir="${freidi.source.dir}_" extension=".xml" includes="**/*.xml"
             force="true"
-            style="05.2 Include Music in Sources/includeMusic2source.xsl">
+            style="06.2 Include Music in Sources/includeMusic2source.xsl">
             <param name="path" expression="${freidi.blueprint}"/>
             <param name="movNo" expression="${freidi.mov.id}"/>
         </xslt>
