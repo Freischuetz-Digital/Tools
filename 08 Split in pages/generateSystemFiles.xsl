@@ -175,13 +175,13 @@
                         
                         <xsl:result-document href="{concat($destdir, '/', $siglum,'/',$movID,'/',$siglum,'_page',$pageN,$suffix,'.xml')}" indent="yes" method="xml">
                             <xsl:processing-instruction name="xml-model">
-                                <xsl:attribute name="href" select="../../../../../schemata/rng/edirom2013.rng"/>
-                                <xsl:attribute name="tpye" select="application/xml"/>
+                                <xsl:attribute name="href">../../../../../schemata/rng/edirom2013.rng</xsl:attribute>
+                                <xsl:attribute name="tpye">application/xml</xsl:attribute>
                                 <xsl:attribute name="schematypens">http://relaxng.org/ns/structure/1.0</xsl:attribute>
                             </xsl:processing-instruction>
                             <xsl:processing-instruction name="xml-model">
-                                <xsl:attribute name="href" select="../../../../../schemata/rng/edirom2013.rng"/>
-                                <xsl:attribute name="tpye" select="application/xml"/>
+                                <xsl:attribute name="href">../../../../../schemata/rng/edirom2013.rng</xsl:attribute>
+                                <xsl:attribute name="tpye">application/xml</xsl:attribute>
                                 <xsl:attribute name="schematypens">http://purl.oclc.org/dsdl/schematron</xsl:attribute>
                             </xsl:processing-instruction>
                             <xsl:element name="mei" namespace="http://www.music-encoding.org/ns/mei">
@@ -192,7 +192,7 @@
                                     <xsl:element name="fileDesc" namespace="http://www.music-encoding.org/ns/mei">
                                         <xsl:copy-of select="$header//mei:fileDesc/mei:titleStmt"/>
                                         <xsl:copy-of select="$header//mei:fileDesc/mei:pubStmt"/>
-                                        <xsl:if test="$providedScoreDef or $continuedSection">
+                                        <xsl:if test="$providedScoreDef/mei:annot or $continuedSection/mei:annot">
                                         <xsl:element name="notesStmt" namespace="http://www.music-encoding.org/ns/mei">
                                             <xsl:copy-of select="$providedScoreDef"/>
                                             <xsl:copy-of select="$continuedSection"/>
