@@ -8,7 +8,8 @@
         <echo>ant improveMusic -Dfreidi.in=INPUT_MEI -Dfreidi.out=OUTPUT_MEI -Dfreidi.mov.id=MOV_ID</echo>
         <echo>ant includeMusicInCore -Dfreidi.in=INPUT_MEI -Dfreidi.core=CORE_MEI -Dfreidi.core.tmp=TMP_CORE_MEI -Dfreidi.blueprint=BLUEPRINT_MEI -Dfreidi.mov.id=MOV_ID</echo>
         <echo>ant includeMusicInSources -Dfreidi.blueprint=BLUEPRINT_MEI -Dfreidi.source.dir=SOURCES_DIR -Dfreidi.mov.id=MOV_ID</echo>
-        <echo>ant MergeCoreAndSources -Dfreidi.core=CORE_MEI -Dfreidi.source.dir=SOURCES_DIR -Dfreidi.dest.dir=DEST_DIR</echo>
+        <echo>ant mergeCoreAndSources -Dfreidi.core=CORE_MEI -Dfreidi.source.dir=SOURCES_DIR -Dfreidi.dest.dir=DEST_DIR</echo>
+        <echo>ant splitInPages -Dfreidi.in=INPUT_MEI -Dfreidi.dest.dir=DEST_DIR -Dfreidi.mov.id=MOV_ID</echo>
     </target>
     
     <target name="musicXMLPartToTime">
@@ -102,7 +103,7 @@
         </xslt>
     </target>
     
-    <target name="MergeCoreAndSources">
+    <target name="mergeCoreAndSources">
         
         <available  file="${freidi.source.dir}" property="freidi.source.dir.exists"/>
         <available file="${freidi.core}" property="freidi.core.exists"/>
@@ -118,6 +119,24 @@
             force="true"
             style="07 Merge Core and Sources/mergeCoreSource.xsl">
             <param name="corePath" expression="${freidi.core}"/>
+        </xslt>
+    </target>
+    
+    <target name="splitInPages">
+        
+        <available  file="${freidi.in}" property="freidi.in.exists"/>
+        
+        <fail unless="freidi.in" message="Parameter freidi.in is missing"/>
+        <fail unless="freidi.dest.dir" message="Parameter freidi.dest.dir is missing"/>
+        <fail unless="freidi.mov.id" message="Parameter freidi.mov.id is missing"/>
+        
+        <fail message="File ${freidi.in} does not exist, is empty or not readable" unless="freidi.in.exists"/>
+        
+        <xslt in="${freidi.in}" out="${java.io.tmpdir}/splitInPages.xml"
+            force="true"
+            style="08 Split in pages/generateSystemFiles.xsl">
+            <param name="movement" expression="${freidi.mov.id}"/>
+            <param name="destdir" expression="${freidi.dest.dir}"/>
         </xslt>
     </target>
     
