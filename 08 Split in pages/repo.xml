@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<meta xmlns="http://exist-db.org/xquery/repo">
+    <description>Edirom Online - @SOURCE_MOV@</description>
+    <author>Daniel Röwenstrunk</author>
+    <website/>
+    <status>alpha</status>
+    <license>GNU-LGPL</license>
+    <copyright>true</copyright>
+    <type>application</type>
+    <target>@TARGET_PATH@</target>
+    <prepare>pre-install.xql</prepare>
+    <finish/>
+    <permissions user="edirom" password="edirom" group="freidi" mode="0775"/>
+</meta>

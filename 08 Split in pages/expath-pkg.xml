@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://expath.org/ns/pkg" name="http://www.edirom.de/apps/EdiromOnline/@SOURCE_MOV@" abbrev="EdiromOnline-@SOURCE_MOV@" version="0.1" spec="1.0">
+    <title>Edirom Online - @SOURCE_MOV@</title>
+</package>

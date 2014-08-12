@@ -86,6 +86,14 @@ ant splitInPages -Dfreidi.in=INPUT_MEI -Dfreidi.dest.dir=DEST_DIR -Dfreidi.mov.i
 e.g. ant splitInPages -Dfreidi.in=sources/A.xml -Dfreidi.dest.dir=dest -Dfreidi.mov.id=2
 ```
 
+This task generates a web xar for moving the files to a eXist database
+
+```shell
+ant generateXarPackage -Dfreidi.src.dir=SRC_DIR -Dfreidi.out=OUTPUT-XAR -Dfreidi.source.mov=SOURCE_MOV -Dfreidi.exist.col=EXIST_COL 
+e.g. generateXarPackage -Dfreidi.src.dir=sources/A_mov0 -Dfreidi.out=build-dir/A_mov0.xar -Dfreidi.source.mov=A_mov0 -Dfreidi.exist.col=/db/contents/A_mov0 
+```
+
+
 ## License ##
 
 The FreiDi tools are released to the public under the terms of the [GNU GPL v.3](http://www.gnu.org/copyleft/gpl.html) open source license.

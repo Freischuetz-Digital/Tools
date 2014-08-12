@@ -10,6 +10,7 @@
         <echo>ant includeMusicInSources -Dfreidi.blueprint=BLUEPRINT_MEI -Dfreidi.source.dir=SOURCES_DIR -Dfreidi.mov.id=MOV_ID</echo>
         <echo>ant mergeCoreAndSources -Dfreidi.core=CORE_MEI -Dfreidi.source.dir=SOURCES_DIR -Dfreidi.dest.dir=DEST_DIR</echo>
         <echo>ant splitInPages -Dfreidi.in=INPUT_MEI -Dfreidi.dest.dir=DEST_DIR -Dfreidi.mov.id=MOV_ID</echo>
+        <echo>ant generateXarPackage -Dfreidi.src.dir=SRC_DIR -Dfreidi.out=OUTPUT-XAR -Dfreidi.source.mov=SOURCE_MOV -Dfreidi.exist.col=EXIST_COL</echo>
     </target>
     
     <target name="musicXMLPartToTime">
@@ -138,6 +139,35 @@
             <param name="movement" expression="${freidi.mov.id}"/>
             <param name="destdir" expression="${freidi.dest.dir}"/>
         </xslt>
+    </target>
+    
+    <target name="generateXarPackage">
+        
+        <fail unless="freidi.src.dir" message="Parameter freidi.src.dir is missing"/>
+        <fail unless="freidi.out" message="Parameter freidi.out is missing"/>
+        <fail unless="freidi.source.mov" message="Parameter freidi.source.mov is missing"/>
+        <fail unless="freidi.exist.col" message="Parameter freidi.exist.col is missing"/>
+        
+        <property name="temp.dir" value="temp"/>
+        
+        <mkdir dir="${temp.dir}"/>
+        <copy todir="${temp.dir}">
+            <fileset dir="${freidi.src.dir}"/>
+        </copy>
+        <copy todir="${temp.dir}">
+            <fileset dir="08 Split in pages">
+                <include name="**/*.xml"/>
+                <include name="**/*.xql"/>
+            </fileset>
+            <filterset>
+                <filter token="SOURCE_MOV" value="${freidi.source.mov}"/>
+                <filter token="TARGET_PATH" value="${freidi.exist.col}"/>
+            </filterset>
+        </copy>
+        
+        <zip basedir="${temp.dir}" destfile="${freidi.out}"/>
+        
+        <delete dir="${temp.dir}"/>
     </target>
     
 </project>
