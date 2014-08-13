@@ -1,7 +1,7 @@
 MusicXML to MEI
 ===============
 
-Use script musicxml2mei-3.0.xsl available at [google code of music-encoding](https://music-encoding.googlecode.com/svn/trunk/tools/musicxml2mei/musicxml2mei-3.0.xsl) for transforming time wise MusicXML to MEI.
+Use script musicxml2mei-3.0.xsl available at [google code of music-encoding](https://music-encoding.googlecode.com/svn/trunk/tools/musicxml2mei/musicxml2mei-3.0.xsl) for transforming time wise MusicXML to MEI and save the file in the corresponding folder.
 
 ```shell
 ant musicXMLToMEI -Dfreidi.in=INPUT_MUSICXML -Dfreidi.out=OUTPUT_MEI
