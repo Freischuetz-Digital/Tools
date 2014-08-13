@@ -15,7 +15,7 @@ Tools
 
 ### MusicXML part wise to time wise ###
 
-Use script MusicXML_parttime.xsl available at [developers page of musicxml.org](http://www.musicxml.com/for-developers/musicxml-xslt/partwise-to-timewise/) for transforming part wise MusicXML to time wise MusicXML.
+Use script MusicXML_parttime.xsl available at [developers page of musicxml.org](http://www.musicxml.com/for-developers/musicxml-xslt/partwise-to-timewise/) for transforming part wise MusicXML to time wise MusicXML and save the file in the corresponding folder.
 
 ```shell
 ant musicXMLPartToTime -Dfreidi.in=INPUT_MUSICXML -Dfreidi.out=OUTPUT_MUSICXML
@@ -24,7 +24,7 @@ e.g. ant musicXMLPartToTime -Dfreidi.in=musicXML/mov_02_partwise.xml -Dfreidi.ou
 
 ### MusicXML to MEI ###
 
-Use script musicxml2mei-3.0.xsl available at [google code of music-encoding](https://music-encoding.googlecode.com/svn/trunk/tools/musicxml2mei/musicxml2mei-3.0.xsl) for transforming time wise MusicXML to MEI.
+Use script musicxml2mei-3.0.xsl available at [google code of music-encoding](https://music-encoding.googlecode.com/svn/trunk/tools/musicxml2mei/musicxml2mei-3.0.xsl) for transforming time wise MusicXML to MEI and save the file in the corresponding folder.
 
 ```shell
 ant musicXMLToMEI -Dfreidi.in=INPUT_MUSICXML -Dfreidi.out=OUTPUT_MEI
@@ -43,6 +43,8 @@ This includes following tasks:
 * convert chords with stemmod to bTrem
 * convert mei:artic and mei:accid to respective attributes
 * generate mei:bTrem elements where applicable
+
+The MOV_ID specifies the attribute @xml:id that will be appended to the mdiv-element.
 
 ```shell
 ant improveMusic -Dfreidi.in=INPUT_MEI -Dfreidi.out=OUTPUT_MEI -Dfreidi.mov.id=MOV_ID
