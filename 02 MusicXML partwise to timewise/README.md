@@ -1,7 +1,7 @@
 MusicXML partwise to timewise
 =============================
 
-Use script MusicXML_parttime.xsl available at [developers page of musicxml.org](http://www.musicxml.com/for-developers/musicxml-xslt/partwise-to-timewise/) for transforming part wise MusicXML to time wise MusicXML.
+Use script MusicXML_parttime.xsl available at [developers page of musicxml.org](http://www.musicxml.com/for-developers/musicxml-xslt/partwise-to-timewise/) for transforming part wise MusicXML to time wise MusicXML and save the file in the corresponding folder.
 
 ```
 ant musicXMLPartToTime -Dfreidi.in=INPUT_MUSICXML -Dfreidi.out=OUTPUT_MUSICXML
