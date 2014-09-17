@@ -1,7 +1,9 @@
 Tools
 =====
 
-## Data structure and modell ##
+## Data structure and model ##
+
+The tools for the BMBF-funded project Freischütz Digital are built on a newly thought data model for music encoding resp. digital editions of music. Each source of the opera is considered equal and is encoded independently, however, there will be one ’core’-file that acts as driver for all the sources. This core-file will contain an edited version of the music and variants from all sources. All source-files will point to the right place in the edition-file. The workflow represents all steps (from a single Finale-file to XML-snipptes for a single page) that need to be taken in order to be able to proofread data. This is necessary to create an edition, because firstly, all datasets are similar to the music that derives from the Weber-Gesamtausgabe. Not before the music is proofread the concept of core-/source-files is valid.
 
 ### Core file ###
 
@@ -54,7 +56,7 @@ e.g. ant improveMusic -Dfreidi.in=mei/mov_02.xml -Dfreidi.out=mei/mov_02_improve
 
 ### Include MEI data in Core file and create blueprint ###
 
-This script includes a movement into the core file.
+This script includes a movement into the core file and generates a blueprint file that is included into the source files in the next step.
 
 ```shell
 ant includeMusicInCore -Dfreidi.in=INPUT_MEI -Dfreidi.core=CORE_MEI -Dfreidi.core.tmp=TMP_CORE_MEI -Dfreidi.blueprint=BLUEPRINT_MEI -Dfreidi.mov.id=MOV_ID
