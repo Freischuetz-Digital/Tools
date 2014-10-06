@@ -224,7 +224,7 @@
     <xd:doc scope="component">
         <xd:desc>Avoid mei:dynam/mei:rend that gets the rend element stripped from retaining the indentation text nodes</xd:desc>
     </xd:doc>
-    <xsl:template match="mei:dynam" mode="core">
+    <xsl:template match="mei:dynam" mode="lastRun">
         <xsl:choose>
             <xsl:when test="mei:rend[@rend = ('sub','sup')]">
                 <xsl:apply-templates mode="#current"/>
