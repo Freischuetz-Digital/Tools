@@ -759,4 +759,6 @@
         </xsl:copy>
     </xsl:template>
     
+    <xsl:template match="mei:mRest/@dur" mode="lastRun"/>
+    
 </xsl:stylesheet>
