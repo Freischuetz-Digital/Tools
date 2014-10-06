@@ -765,4 +765,13 @@
     
     <xsl:template match="mei:staffDef[@n and count(@*) = 1 and not(./node())]" mode="lastRun"/>
     
+    <xd:doc scope="component">
+        <xd:desc>if all descendant staffDef elements of a scoreDef have no values except @n and soreDef has attributes then copy scoreDef and attributes</xd:desc>
+    </xd:doc>
+    <xsl:template match="mei:scoreDef[descendant::mei:staffDef[@n and count(@*) = 1 and not(./node())]]" mode="lastRun">
+        <xsl:copy>
+            <xsl:apply-templates select="@*" mode="#current"/>
+        </xsl:copy>
+    </xsl:template>
+    
 </xsl:stylesheet>
