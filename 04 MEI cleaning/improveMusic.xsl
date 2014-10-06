@@ -761,4 +761,6 @@
     
     <xsl:template match="mei:mRest/@dur" mode="lastRun"/>
     
+    <xsl:template match="@instr" mode="lastRun"/>
+    
 </xsl:stylesheet>
