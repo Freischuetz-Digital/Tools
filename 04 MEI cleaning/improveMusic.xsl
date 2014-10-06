@@ -763,4 +763,6 @@
     
     <xsl:template match="@instr" mode="lastRun"/>
     
+    <xsl:template match="mei:staffDef[@n and count(@*) = 1 and not(./node())]" mode="lastRun"/>
+    
 </xsl:stylesheet>
