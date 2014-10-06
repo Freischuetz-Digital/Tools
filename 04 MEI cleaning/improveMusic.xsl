@@ -48,16 +48,16 @@
     </xd:doc>
     <xsl:variable name="fileName" select="tokenize(document-uri(root()),'/')[last()]"/>
     
-  <xd:doc scope="component">
-    <xd:desc>
-      <xd:p>General template or copying all nodes that are not being nahdled by a more specific xsl:template</xd:p>
-    </xd:desc>
-  </xd:doc>
-  <xsl:template match="node() | @*" mode="#all">
-    <xsl:copy>
-      <xsl:apply-templates select="node() | @*" mode="#current"/>
-    </xsl:copy>
-  </xsl:template>
+    <xd:doc scope="component">
+        <xd:desc>
+            <xd:p>General template or copying all nodes that are not being nahdled by a more specific xsl:template</xd:p>
+        </xd:desc>
+    </xd:doc>
+    <xsl:template match="node() | @*" mode="#all">
+        <xsl:copy>
+            <xsl:apply-templates select="node() | @*" mode="#current"/>
+        </xsl:copy>
+    </xsl:template>
     
     <xd:doc scope="component">
         <xd:desc>
@@ -219,6 +219,28 @@
     
     <xsl:template match="mei:rend[not(@rend = ('sub','sup'))]" mode="core">
         <xsl:apply-templates select="node()" mode="#current"/>
+    </xsl:template>
+    
+    <xd:doc scope="component">
+        <xd:desc>Avoid mei:dynam/mei:rend that gets the rend element stripped from retaining the indentation text nodes</xd:desc>
+    </xd:doc>
+    <xsl:template match="mei:dynam" mode="core">
+        <xsl:choose>
+            <xsl:when test="mei:rend[@rend = ('sub','sup')]">
+                <xsl:apply-templates mode="#current"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:copy>
+                    <xsl:apply-templates select="@*" mode="#current"/>
+                    <xsl:analyze-string select="." regex="[^ \n]+">
+                        <xsl:matching-substring>
+                            <xsl:copy/>
+                        </xsl:matching-substring>
+                        <xsl:non-matching-substring/>
+                    </xsl:analyze-string>
+                </xsl:copy>
+            </xsl:otherwise>
+        </xsl:choose>
     </xsl:template>
     
     <xd:doc scope="component">
