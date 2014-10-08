@@ -780,10 +780,10 @@
     <xsl:template match="processing-instruction('xml-model')" mode="lastRun">
         <xsl:choose>
             <xsl:when test="contains(.,'relaxng')">
-                <xsl:processing-instruction name="xml-model">href="../../../schemata/rng/freidi_music_sources.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"</xsl:processing-instruction>
+                <xsl:processing-instruction name="xml-model">href="../../../schemata/rng/freidi-schema-musicSource.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"</xsl:processing-instruction>
             </xsl:when>
             <xsl:when test="contains(.,'schematron')">
-                <xsl:processing-instruction name="xml-model">href="../../../schemata/rng/freidi_music_sources.rng" type="application/xml" schematypens="http://purl.oclc.org/dsdl/schematron"</xsl:processing-instruction>
+                <xsl:processing-instruction name="xml-model">href="../../../schemata/rng/freidi-schema-musicSource.rng" type="application/xml" schematypens="http://purl.oclc.org/dsdl/schematron"</xsl:processing-instruction>
             </xsl:when>
             <xsl:otherwise>
                 <xsl:apply-templates select="." mode="#current"/>
