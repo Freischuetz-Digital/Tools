@@ -224,7 +224,7 @@
     <xd:doc scope="component">
         <xd:desc>Avoid mei:dynam/mei:rend that gets the rend element stripped from retaining the indentation text nodes</xd:desc>
     </xd:doc>
-    <xsl:template match="mei:dynam" mode="core">
+    <xsl:template match="mei:dynam" mode="lastRun">
         <xsl:choose>
             <xsl:when test="mei:rend[@rend = ('sub','sup')]">
                 <xsl:apply-templates mode="#current"/>
@@ -760,5 +760,35 @@
     </xsl:template>
     
     <xsl:template match="mei:mRest/@dur" mode="lastRun"/>
+    
+    <xsl:template match="@instr" mode="lastRun"/>
+    
+    <xsl:template match="mei:staffDef[@n and count(@*) = 1 and not(./node())]" mode="lastRun"/>
+    
+    <xd:doc scope="component">
+        <xd:desc>if all descendant staffDef elements of a scoreDef have no values except @n and soreDef has attributes then copy scoreDef and attributes</xd:desc>
+    </xd:doc>
+    <xsl:template match="mei:scoreDef[descendant::mei:staffDef[@n and count(@*) = 1 and not(./node())]]" mode="lastRun">
+        <xsl:copy>
+            <xsl:apply-templates select="@*" mode="#current"/>
+        </xsl:copy>
+    </xsl:template>
+    
+    <xd:doc scope="component">
+        <xd:desc>Replace general mei-all.rng references with custom freidi-schema reference</xd:desc>
+    </xd:doc>
+    <xsl:template match="processing-instruction('xml-model')" mode="lastRun">
+        <xsl:choose>
+            <xsl:when test="contains(.,'relaxng')">
+                <xsl:processing-instruction name="xml-model">href="../../../schemata/rng/freidi-schema-musicSource.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"</xsl:processing-instruction>
+            </xsl:when>
+            <xsl:when test="contains(.,'schematron')">
+                <xsl:processing-instruction name="xml-model">href="../../../schemata/rng/freidi-schema-musicSource.rng" type="application/xml" schematypens="http://purl.oclc.org/dsdl/schematron"</xsl:processing-instruction>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:apply-templates select="." mode="#current"/>
+            </xsl:otherwise>
+        </xsl:choose>
+    </xsl:template>
     
 </xsl:stylesheet>
