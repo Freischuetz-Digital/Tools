@@ -17,7 +17,7 @@ Requires ANT installed on your plattform (https://ant.apache.org/).
 
 The ANT build script defines tasks to transform your data via commandline. Invoking ANT without any further commands via commandline will prompt a  "help" listing all available sub-tasks.
 
-### Notice for Windows Powershell users ###
+#### Notice for Windows Powershell users ####
 
 Invoking an ANT task from Powershell might result in an error message that certain parameters for the task are not defined, although you entered all parameters as described, e.g.
 
