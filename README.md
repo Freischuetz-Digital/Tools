@@ -41,6 +41,12 @@ Solution to this is enclosing all "freidi" parameters in double quotes ("), e.g.
 ant improveMusic "-Dfreidi.in=mei/mov_02.xml" "-Dfreidi.out=mei/mov_02_improved.xml" "-Dfreidi.mov.id=mov_02"
 ```
 
+*Windows file paths*
+
+Other problems that might occur when invoking the ANT tasks via Powershell or generally on Windows based operationg systems are connected with backslash '\' instead of forward slash '/' in file paths
+
+Saxon will interprete a file pat as absolute when it starts with a leading forward slash- this might not be the case for absolute file paths generated relying on autocomplete options in Windows environments (there starting e.g. with 'C:\'). Entering an absolute file path in Linux style (with forward slashes and starting with a forward slash, omitting 'file:\C:\) might do the job, alternatively use relative file paths.
+
 ### Finale export to MusicXML ###
 
 ### MusicXML part wise to time wise ###
