@@ -175,12 +175,12 @@
                         
                         <xsl:result-document href="{concat($destdir, '/', $siglum,'/',$movID,'/',$siglum,'_page',$pageN,$suffix,'.xml')}" indent="yes" method="xml">
                             <xsl:processing-instruction name="xml-model">
-                                <xsl:attribute name="href">../../../../../schemata/rng/edirom2013.rng</xsl:attribute>
+                                <xsl:attribute name="href">../../../../../schemata/rng/freidi-schema-musicSource.rng</xsl:attribute>
                                 <xsl:attribute name="tpye">application/xml</xsl:attribute>
                                 <xsl:attribute name="schematypens">http://relaxng.org/ns/structure/1.0</xsl:attribute>
                             </xsl:processing-instruction>
                             <xsl:processing-instruction name="xml-model">
-                                <xsl:attribute name="href">../../../../../schemata/rng/edirom2013.rng</xsl:attribute>
+                                <xsl:attribute name="href">../../../../../schemata/rng/freidi-schema-musicSource.rng</xsl:attribute>
                                 <xsl:attribute name="tpye">application/xml</xsl:attribute>
                                 <xsl:attribute name="schematypens">http://purl.oclc.org/dsdl/schematron</xsl:attribute>
                             </xsl:processing-instruction>
