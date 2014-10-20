@@ -7,6 +7,8 @@
     exclude-result-prefixes="xs xd mei"
     version="2.0">
     
+    <xsl:import href="../global-parameters.xsl"/>
+    
     <xd:doc scope="stylesheet">
         <xd:desc>
             <xd:p><xd:b>Created on:</xd:b> Jun 20, 2013</xd:p>
@@ -207,15 +209,17 @@
                                     <xsl:element name="revisionDesc" namespace="http://www.music-encoding.org/ns/mei">
                                         <xsl:copy-of select="$header//mei:change"/>
                                         <xsl:element name="change" namespace="http://www.music-encoding.org/ns/mei">
-                                            <xsl:attribute name="n" select="($header//mei:change)[last()]/@n + 1"/>
+                                            <xsl:attribute name="n" select="count(($header//mei:change)) + 1"/>
                                             <xsl:element name="respStmt" namespace="http://www.music-encoding.org/ns/mei">
-                                                <xsl:element name="persName" namespace="http://www.music-encoding.org/ns/mei">Johannes Kepper</xsl:element>
+                                                <xsl:element name="persName" namespace="http://www.music-encoding.org/ns/mei">
+                                                  <xsl:value-of select="$transformationOperator"/>
+                                                </xsl:element>
                                             </xsl:element>
                                             <xsl:element name="changeDesc" namespace="http://www.music-encoding.org/ns/mei">
                                                 <xsl:element name="p" namespace="http://www.music-encoding.org/ns/mei">
                                                     File extracted from <xsl:value-of select="$siglum"/>_merged.xml, using <xsl:element name="ref" namespace="http://www.music-encoding.org/ns/mei">
-                                                        <xsl:attribute name="target">#generateSystemFiles.xsl</xsl:attribute>
-                                                        <xsl:text>generateSystemFiles.xsl</xsl:text>
+                                                      <xsl:attribute name="target" select="concat('https://github.com/Freischuetz-Digital/Tools/blob/',$FreiDi-Tools_version,'/08%20Split%20in%20pages/generateSystemFiles.xsl')"/>
+                                                      <xsl:text>generateSystemFiles.xsl from</xsl:text> from Freischütz Digital Tools <xsl:value-of select="$FreiDi-Tools_version"/>
                                                     </xsl:element>.
                                                 </xsl:element>
                                             </xsl:element>

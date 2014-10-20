@@ -4,6 +4,8 @@
     xmlns:xd="http://www.oxygenxml.com/ns/doc/xsl"
     xmlns:mei="http://www.music-encoding.org/ns/mei"
     version="2.0">
+  
+    <xsl:include href="../global-parameters.xsl"/>
     
     <xd:doc scope="stylesheet">
       <xd:desc>
@@ -76,14 +78,14 @@
             <xsl:element name="change" namespace="http://www.music-encoding.org/ns/mei">
                 <xsl:attribute name="n" select="number(mei:change[last()]/@n) + 1"/>
                 <xsl:element name="respStmt" namespace="http://www.music-encoding.org/ns/mei">
-                    <xsl:element name="persName" namespace="http://www.music-encoding.org/ns/mei">Johannes Kepper</xsl:element>
+                  <xsl:element name="persName" namespace="http://www.music-encoding.org/ns/mei">
+                    <xsl:value-of select="$transformationOperator"/>
+                  </xsl:element>
                 </xsl:element>
                 <xsl:element name="changeDesc" namespace="http://www.music-encoding.org/ns/mei">
                     <xsl:element name="p" namespace="http://www.music-encoding.org/ns/mei">
-                        Source file merged with core to generate a complete encoding, using <xsl:element name="ref" namespace="http://www.music-encoding.org/ns/mei">
-                            <xsl:attribute name="target">#mergeCoreSource.xsl</xsl:attribute>
-                            <xsl:text>mergeCoreSource.xsl</xsl:text>
-                        </xsl:element>. References to core.xml are kept intact. 
+                      Source file merged with core to generate a complete encoding, using <xsl:element name="ref" namespace="http://www.music-encoding.org/ns/mei">
+                        <xsl:attribute name="target" select="concat('https://github.com/Freischuetz-Digital/Tools/blob/',$FreiDi-Tools_version,'/07%20Merge%20Core%20and%20Sources/mergeCoreSource.xsl')"/>mergeCoreSource.xsl</xsl:element> from Freischütz Digital Tools <xsl:value-of select="$FreiDi-Tools_version"/>. References to core.xml are kept intact. 
                     </xsl:element>
                 </xsl:element>
                 <xsl:element name="date" namespace="http://www.music-encoding.org/ns/mei">
