@@ -209,7 +209,7 @@
                                     <xsl:element name="revisionDesc" namespace="http://www.music-encoding.org/ns/mei">
                                         <xsl:copy-of select="$header//mei:change"/>
                                         <xsl:element name="change" namespace="http://www.music-encoding.org/ns/mei">
-                                            <xsl:attribute name="n" select="($header//mei:change)[last()]/@n + 1"/>
+                                            <xsl:attribute name="n" select="count(($header//mei:change)) + 1"/>
                                             <xsl:element name="respStmt" namespace="http://www.music-encoding.org/ns/mei">
                                                 <xsl:element name="persName" namespace="http://www.music-encoding.org/ns/mei"><xsl:value-of select="$transformationOperator"/></xsl:element>
                                             </xsl:element>
