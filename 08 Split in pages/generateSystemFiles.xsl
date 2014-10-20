@@ -361,7 +361,7 @@
         </xsl:if>
         
         <xsl:copy>
-            <xsl:apply-templates select="@* except(@lines,@clef.line,@clef.shape,@key.sig,@key.mode,@meter.count,@meter.unit,@meter.sym)" mode="getDefaultScoreDef"/>
+            <xsl:apply-templates select="@* except(@clef.line,@clef.shape,@key.sig,@key.mode,@meter.count,@meter.unit,@meter.sym)" mode="getDefaultScoreDef"/> <!-- bwb warum except lines @lines,-->
             <xsl:choose>
                 <xsl:when test="exists($precedingClef)">
                     <xsl:apply-templates select="$precedingClef/(@clef.line | @clef.shape | @line | @shape)" mode="getDefaultScoreDef"/>
