@@ -6,6 +6,9 @@
     xmlns:local="no:where"
     exclude-result-prefixes="xs xd"
     version="2.0">
+  
+    <xsl:import href="../global-parameters.xsl"/>
+  
     <xd:doc scope="stylesheet">
         <xd:desc>
             <xd:p><xd:b>Created on:</xd:b> Apr 19, 2013</xd:p>
@@ -739,14 +742,13 @@
                 <xsl:attribute name="n" select="max(mei:change/@n) + 1"/>
                 <xsl:element name="respStmt" namespace="http://www.music-encoding.org/ns/mei">
                     <xsl:element name="persName" namespace="http://www.music-encoding.org/ns/mei">
-                        <xsl:attribute name="nymref" select="'#smJK'"/>
+                        <xsl:value-of select="$transformationOperator"/>
                     </xsl:element>
                 </xsl:element>
                 <xsl:element name="changeDesc" namespace="http://www.music-encoding.org/ns/mei">
                     <xsl:variable name="text">
                         Content of <xsl:value-of select="$fileName"/> processed with <xsl:element name="ref" namespace="http://www.music-encoding.org/ns/mei">
-                            <xsl:attribute name="target" select="'#improveMusic.xsl'"/>improveMusic.xsl</xsl:element> in order to resolve mei:bTrems, mei:fTrems, intermediary mei:scoreDefs and mei:staffDef, transform mei:artic and mei:accid to respective attributes, etc. 
-                    </xsl:variable>
+                          <xsl:attribute name="target" select="concat('https://github.com/Freischuetz-Digital/Tools/blob/',$FreiDi-Tools_version,'/04%20MEI%20cleaning/improveMusic.xsl')"/>improveMusic.xsl</xsl:element> from Freischütz Digital Tools <xsl:value-of select="$FreiDi-Tools_version"/> in order to resolve mei:bTrems, mei:fTrems, intermediary mei:scoreDefs and mei:staffDef, transform mei:artic and mei:accid to respective attributes, etc.</xsl:variable>
                     
                     <xsl:element name="p" namespace="http://www.music-encoding.org/ns/mei">
                         <xsl:value-of select="normalize-space($text)"/>

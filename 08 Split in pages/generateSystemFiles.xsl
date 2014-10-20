@@ -211,12 +211,14 @@
                                         <xsl:element name="change" namespace="http://www.music-encoding.org/ns/mei">
                                             <xsl:attribute name="n" select="count(($header//mei:change)) + 1"/>
                                             <xsl:element name="respStmt" namespace="http://www.music-encoding.org/ns/mei">
-                                                <xsl:element name="persName" namespace="http://www.music-encoding.org/ns/mei"><xsl:value-of select="$transformationOperator"/></xsl:element>
+                                                <xsl:element name="persName" namespace="http://www.music-encoding.org/ns/mei">
+                                                  <xsl:value-of select="$transformationOperator"/>
+                                                </xsl:element>
                                             </xsl:element>
                                             <xsl:element name="changeDesc" namespace="http://www.music-encoding.org/ns/mei">
                                                 <xsl:element name="p" namespace="http://www.music-encoding.org/ns/mei">
                                                     File extracted from <xsl:value-of select="$siglum"/>_merged.xml, using <xsl:element name="ref" namespace="http://www.music-encoding.org/ns/mei">
-                                                      <xsl:attribute name="target">https://github.com/Freischuetz-Digital/Tools/blob/develop/08%20Split%20in%20pages/generateSystemFiles.xsl</xsl:attribute>
+                                                      <xsl:attribute name="target" select="concat('https://github.com/Freischuetz-Digital/Tools/blob/',$FreiDi-Tools_version,'/08%20Split%20in%20pages/generateSystemFiles.xsl')"/>
                                                       <xsl:text>generateSystemFiles.xsl from</xsl:text> from Freischütz Digital Tools <xsl:value-of select="$FreiDi-Tools_version"/>
                                                     </xsl:element>.
                                                 </xsl:element>
