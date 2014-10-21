@@ -154,14 +154,13 @@
     <target name="generateXarPackage">
         
         <fail unless="freidi.src.dir" message="Parameter freidi.src.dir is missing"/>
-        <fail unless="freidi.out" message="Parameter freidi.out is missing"/>
         <fail unless="freidi.source.mov" message="Parameter freidi.source.mov is missing"/>
       
+        <xmlproperty file="properties.xml" keeproot="false" collapseattributes="true" />      
         <substring-before text="${freidi.source.mov}" delimiter="_" property="freidi.source" />
         <property name="freidi.exist.col" value="pitchtool-data/${freidi.source}/${freidi.source.mov}"/>
+        <property name="freidi.out" value="build-dir/FreiDi_PMD-pitchtool-${freidi.source.mov}-${FreiDi-Tools_version}.xar"/>
         <property name="temp.dir" value="temp"/>
-        <xmlproperty file="properties.xml" keeproot="false" collapseattributes="true" />
-        
         
         <mkdir dir="${temp.dir}"/>
         <copy todir="${temp.dir}">
