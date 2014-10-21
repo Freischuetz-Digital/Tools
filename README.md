@@ -137,6 +137,9 @@ e.g. 'pitchtool-data/A/A_mov5'
 
 where  SOURCE-SIGLUM is a substring-beore '_' from SOURCE-MOV (-Dfreidi.source-mov)
 
+Beware that freidi.out in an optional parameter and will default to:
+'FreiDi_PMD-pitchtool-@SOURCE-MOV@-@TOOLS-VERISON@.xar
+
 
 ## License ##
 
