@@ -6,6 +6,9 @@
     xmlns:functx="http://www.functx.com"
     exclude-result-prefixes="xs xd functx"
     version="2.0">
+  
+    <xsl:include href="../global-parameters.xsl"/>
+  
     <xd:doc scope="stylesheet">
         <xd:desc>
             <xd:p><xd:b>Created on:</xd:b> Jan 25, 2013</xd:p>
@@ -115,14 +118,14 @@
                 <xsl:attribute name="n" select="$changeCount + 1"/>
                 <xsl:element name="respStmt" namespace="http://www.music-encoding.org/ns/mei">
                     <xsl:element name="persName" namespace="http://www.music-encoding.org/ns/mei">
-                        <xsl:attribute name="nymref" select="'#smJK'"/>
+                        <xsl:value-of select="$transformationOperator"/>
                     </xsl:element>
                 </xsl:element>
                 <xsl:element name="changeDesc" namespace="http://www.music-encoding.org/ns/mei">
                     <xsl:element name="p" namespace="http://www.music-encoding.org/ns/mei">
                         Included musical content for #<xsl:value-of select="$targetMov"/> from
-                        <xsl:value-of select="$musicDoc"/> using <xsl:element name="ref" namespace="http://www.music-encoding.org/ns/mei">
-                            <xsl:attribute name="target" select="'#includeMusic2core.xsl'"/>includeMusic2core.xsl</xsl:element>.
+                      <xsl:value-of select="$musicDoc"/> using <xsl:element name="ref" namespace="http://www.music-encoding.org/ns/mei">
+                        <xsl:attribute name="target" select="concat('https://github.com/Freischuetz-Digital/Tools/blob/',$FreiDi-Tools_version,'/06.1%20Include%20Music%20in%20Core/includeMusic2core.xsl')"/>includeMusic2core.xsl</xsl:element> from Freischütz Digital Tools <xsl:value-of select="$FreiDi-Tools_version"/>.
                     </xsl:element>
                 </xsl:element>
                 <xsl:element name="date" namespace="http://www.music-encoding.org/ns/mei">

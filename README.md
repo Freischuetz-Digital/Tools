@@ -13,6 +13,40 @@ The tools for the BMBF-funded project Freischütz Digital are built on a newly t
 
 ### ANT build script ###
 
+Requires ANT installed on your plattform (https://ant.apache.org/).
+
+The ANT build script defines tasks to transform your data via commandline. Invoking ANT without any further commands via commandline will prompt a  "help" listing all available sub-tasks.
+
+#### Notice for Windows users ####
+
+*XSLT-Processor*
+
+Windows default to XALAN but our stylesheets were developed with Saxon. We recomment callin ant with the -lib parameter set to a saxon JAR-file, e.g.
+
+```shell
+ant -lib path\to\saxon9.jar improveMusic -Dfreidi.in=mei/mov_02.xml -Dfreidi.out=mei/mov_02_improved.xml -Dfreidi.mov.id=mov_02
+```
+
+*Powershell*
+
+Invoking an ANT task from Powershell might result in an error message that certain parameters for the task are not defined, although you entered all parameters as described, e.g.
+
+```shell
+ant improveMusic -Dfreidi.in=mei/mov_02.xml -Dfreidi.out=mei/mov_02_improved.xml -Dfreidi.mov.id=mov_02
+```
+
+Solution to this is enclosing all "freidi" parameters in double quotes ("), e.g.
+
+```shell
+ant improveMusic "-Dfreidi.in=mei/mov_02.xml" "-Dfreidi.out=mei/mov_02_improved.xml" "-Dfreidi.mov.id=mov_02"
+```
+
+*Windows file paths*
+
+Other problems that might occur when invoking the ANT tasks via Powershell or generally on Windows based operationg systems are connected with backslash '\' instead of forward slash '/' in file paths
+
+Saxon will interprete a file pat as absolute when it starts with a leading forward slash- this might not be the case for absolute file paths generated relying on autocomplete options in Windows environments (there starting e.g. with 'C:\'). Entering an absolute file path in Linux style (with forward slashes and starting with a forward slash, omitting 'file:\C:\) might do the job, alternatively use relative file paths.
+
 ### Finale export to MusicXML ###
 
 ### MusicXML part wise to time wise ###
@@ -96,6 +130,15 @@ This task generates a web xar for moving the files to a eXist database
 ant generateXarPackage -Dfreidi.src.dir=SRC_DIR -Dfreidi.out=OUTPUT-XAR -Dfreidi.source.mov=SOURCE_MOV -Dfreidi.exist.col=EXIST_COL 
 e.g. generateXarPackage -Dfreidi.src.dir=sources/A_mov0 -Dfreidi.out=build-dir/A_mov0.xar -Dfreidi.source.mov=A_mov0 -Dfreidi.exist.col=/db/contents/A_mov0 
 ```
+
+Beware that -Dfreidi.exist.col is an optional parameter and will default to:
+'pitchtool-data/SOURCE-SIGLUM/SOURCE-MOV'
+e.g. 'pitchtool-data/A/A_mov5'
+
+where  SOURCE-SIGLUM is a substring-beore '_' from SOURCE-MOV (-Dfreidi.source-mov)
+
+Beware that freidi.out in an optional parameter and will default to:
+'FreiDi_PMD-pitchtool-@SOURCE-MOV@-@TOOLS-VERISON@.xar
 
 
 ## License ##

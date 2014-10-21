@@ -6,6 +6,9 @@
     xmlns:local="no:where"
     exclude-result-prefixes="xs xd"
     version="2.0">
+  
+    <xsl:import href="../global-parameters.xsl"/>
+  
     <xd:doc scope="stylesheet">
         <xd:desc>
             <xd:p><xd:b>Created on:</xd:b> Apr 19, 2013</xd:p>
@@ -48,16 +51,16 @@
     </xd:doc>
     <xsl:variable name="fileName" select="tokenize(document-uri(root()),'/')[last()]"/>
     
-  <xd:doc scope="component">
-    <xd:desc>
-      <xd:p>General template or copying all nodes that are not being nahdled by a more specific xsl:template</xd:p>
-    </xd:desc>
-  </xd:doc>
-  <xsl:template match="node() | @*" mode="#all">
-    <xsl:copy>
-      <xsl:apply-templates select="node() | @*" mode="#current"/>
-    </xsl:copy>
-  </xsl:template>
+    <xd:doc scope="component">
+        <xd:desc>
+            <xd:p>General template or copying all nodes that are not being nahdled by a more specific xsl:template</xd:p>
+        </xd:desc>
+    </xd:doc>
+    <xsl:template match="node() | @*" mode="#all">
+        <xsl:copy>
+            <xsl:apply-templates select="node() | @*" mode="#current"/>
+        </xsl:copy>
+    </xsl:template>
     
     <xd:doc scope="component">
         <xd:desc>
@@ -219,6 +222,28 @@
     
     <xsl:template match="mei:rend[not(@rend = ('sub','sup'))]" mode="core">
         <xsl:apply-templates select="node()" mode="#current"/>
+    </xsl:template>
+    
+    <xd:doc scope="component">
+        <xd:desc>Avoid mei:dynam/mei:rend that gets the rend element stripped from retaining the indentation text nodes</xd:desc>
+    </xd:doc>
+    <xsl:template match="mei:dynam" mode="lastRun">
+        <xsl:choose>
+            <xsl:when test="mei:rend[@rend = ('sub','sup')]">
+                <xsl:apply-templates mode="#current"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:copy>
+                    <xsl:apply-templates select="@*" mode="#current"/>
+                    <xsl:analyze-string select="." regex="[^ \n]+">
+                        <xsl:matching-substring>
+                            <xsl:copy/>
+                        </xsl:matching-substring>
+                        <xsl:non-matching-substring/>
+                    </xsl:analyze-string>
+                </xsl:copy>
+            </xsl:otherwise>
+        </xsl:choose>
     </xsl:template>
     
     <xd:doc scope="component">
@@ -717,14 +742,13 @@
                 <xsl:attribute name="n" select="max(mei:change/@n) + 1"/>
                 <xsl:element name="respStmt" namespace="http://www.music-encoding.org/ns/mei">
                     <xsl:element name="persName" namespace="http://www.music-encoding.org/ns/mei">
-                        <xsl:attribute name="nymref" select="'#smJK'"/>
+                        <xsl:value-of select="$transformationOperator"/>
                     </xsl:element>
                 </xsl:element>
                 <xsl:element name="changeDesc" namespace="http://www.music-encoding.org/ns/mei">
                     <xsl:variable name="text">
                         Content of <xsl:value-of select="$fileName"/> processed with <xsl:element name="ref" namespace="http://www.music-encoding.org/ns/mei">
-                            <xsl:attribute name="target" select="'#improveMusic.xsl'"/>improveMusic.xsl</xsl:element> in order to resolve mei:bTrems, mei:fTrems, intermediary mei:scoreDefs and mei:staffDef, transform mei:artic and mei:accid to respective attributes, etc. 
-                    </xsl:variable>
+                          <xsl:attribute name="target" select="concat('https://github.com/Freischuetz-Digital/Tools/blob/',$FreiDi-Tools_version,'/04%20MEI%20cleaning/improveMusic.xsl')"/>improveMusic.xsl</xsl:element> from Freischütz Digital Tools <xsl:value-of select="$FreiDi-Tools_version"/> in order to resolve mei:bTrems, mei:fTrems, intermediary mei:scoreDefs and mei:staffDef, transform mei:artic and mei:accid to respective attributes, etc.</xsl:variable>
                     
                     <xsl:element name="p" namespace="http://www.music-encoding.org/ns/mei">
                         <xsl:value-of select="normalize-space($text)"/>
@@ -735,6 +759,40 @@
                 </xsl:element>
             </xsl:element>
         </xsl:copy>
+    </xsl:template>
+    
+    <xsl:template match="mei:mRest/@dur" mode="lastRun"/>
+  
+    <xsl:template match="mei:mSpace/@dur" mode="lastRun"/>
+    
+    <xsl:template match="@instr" mode="lastRun"/>
+    
+    <xsl:template match="mei:staffDef[@n and count(@*) = 1 and not(./node())]" mode="lastRun"/>
+    
+    <xd:doc scope="component">
+        <xd:desc>if all descendant staffDef elements of a scoreDef have no values except @n and soreDef has attributes then copy scoreDef and attributes</xd:desc>
+    </xd:doc>
+    <xsl:template match="mei:scoreDef[descendant::mei:staffDef[@n and count(@*) = 1 and not(./node())]]" mode="lastRun">
+        <xsl:copy>
+            <xsl:apply-templates select="@*" mode="#current"/>
+        </xsl:copy>
+    </xsl:template>
+    
+    <xd:doc scope="component">
+        <xd:desc>Replace general mei-all.rng references with custom freidi-schema reference</xd:desc>
+    </xd:doc>
+    <xsl:template match="processing-instruction('xml-model')" mode="lastRun">
+        <xsl:choose>
+            <xsl:when test="contains(.,'relaxng')">
+                <xsl:processing-instruction name="xml-model">href="../../../schemata/rng/freidi-schema-musicSource.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"</xsl:processing-instruction>
+            </xsl:when>
+            <xsl:when test="contains(.,'schematron')">
+                <xsl:processing-instruction name="xml-model">href="../../../schemata/rng/freidi-schema-musicSource.rng" type="application/xml" schematypens="http://purl.oclc.org/dsdl/schematron"</xsl:processing-instruction>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:apply-templates select="." mode="#current"/>
+            </xsl:otherwise>
+        </xsl:choose>
     </xsl:template>
     
 </xsl:stylesheet>

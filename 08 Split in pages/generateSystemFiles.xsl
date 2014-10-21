@@ -7,6 +7,8 @@
     exclude-result-prefixes="xs xd mei"
     version="2.0">
     
+    <xsl:import href="../global-parameters.xsl"/>
+    
     <xd:doc scope="stylesheet">
         <xd:desc>
             <xd:p><xd:b>Created on:</xd:b> Jun 20, 2013</xd:p>
@@ -174,16 +176,8 @@
                         </xsl:variable>
                         
                         <xsl:result-document href="{concat($destdir, '/', $siglum,'/',$movID,'/',$siglum,'_page',$pageN,$suffix,'.xml')}" indent="yes" method="xml">
-                            <xsl:processing-instruction name="xml-model">
-                                <xsl:attribute name="href">../../../../../schemata/rng/edirom2013.rng</xsl:attribute>
-                                <xsl:attribute name="tpye">application/xml</xsl:attribute>
-                                <xsl:attribute name="schematypens">http://relaxng.org/ns/structure/1.0</xsl:attribute>
-                            </xsl:processing-instruction>
-                            <xsl:processing-instruction name="xml-model">
-                                <xsl:attribute name="href">../../../../../schemata/rng/edirom2013.rng</xsl:attribute>
-                                <xsl:attribute name="tpye">application/xml</xsl:attribute>
-                                <xsl:attribute name="schematypens">http://purl.oclc.org/dsdl/schematron</xsl:attribute>
-                            </xsl:processing-instruction>
+                            <xsl:processing-instruction name="xml-model">href="../../../../../schemata/rng/freidi-schema-musicSource.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"</xsl:processing-instruction>
+                            <xsl:processing-instruction name="xml-model">href="../../../../../schemata/rng/freidi-schema-musicSource.rng" type="application/xml" schematypens="http://purl.oclc.org/dsdl/schematron"</xsl:processing-instruction>
                             <xsl:element name="mei" namespace="http://www.music-encoding.org/ns/mei">
                                 <xsl:namespace name="xlink" select="'http://www.w3.org/1999/xlink'"/>
                                 <xsl:attribute name="xml:id" select="concat($siglum,'_page',$page/@n,$suffix)"/>
@@ -215,16 +209,17 @@
                                     <xsl:element name="revisionDesc" namespace="http://www.music-encoding.org/ns/mei">
                                         <xsl:copy-of select="$header//mei:change"/>
                                         <xsl:element name="change" namespace="http://www.music-encoding.org/ns/mei">
-                                            <xsl:attribute name="n" select="($header//mei:change)[last()]/@n + 1"/>
+                                            <xsl:attribute name="n" select="count(($header//mei:change)) + 1"/>
                                             <xsl:element name="respStmt" namespace="http://www.music-encoding.org/ns/mei">
-                                                <xsl:element name="persName" namespace="http://www.music-encoding.org/ns/mei">Johannes Kepper</xsl:element>
+                                                <xsl:element name="persName" namespace="http://www.music-encoding.org/ns/mei">
+                                                  <xsl:value-of select="$transformationOperator"/>
+                                                </xsl:element>
                                             </xsl:element>
                                             <xsl:element name="changeDesc" namespace="http://www.music-encoding.org/ns/mei">
                                                 <xsl:element name="p" namespace="http://www.music-encoding.org/ns/mei">
                                                     File extracted from <xsl:value-of select="$siglum"/>_merged.xml, using <xsl:element name="ref" namespace="http://www.music-encoding.org/ns/mei">
-                                                        <xsl:attribute name="target">#generateSystemFiles.xsl</xsl:attribute>
-                                                        <xsl:text>generateSystemFiles.xsl</xsl:text>
-                                                    </xsl:element>.
+                                                      <xsl:attribute name="target" select="concat('https://github.com/Freischuetz-Digital/Tools/blob/',$FreiDi-Tools_version,'/08%20Split%20in%20pages/generateSystemFiles.xsl')"/>
+                                                      <xsl:text>generateSystemFiles.xsl</xsl:text></xsl:element> from Freischütz Digital Tools <xsl:value-of select="$FreiDi-Tools_version"/>.
                                                 </xsl:element>
                                             </xsl:element>
                                             <xsl:element name="date" namespace="http://www.music-encoding.org/ns/mei">
@@ -369,7 +364,7 @@
         </xsl:if>
         
         <xsl:copy>
-            <xsl:apply-templates select="@* except(@lines,@clef.line,@clef.shape,@key.sig,@key.mode,@meter.count,@meter.unit,@meter.sym)" mode="getDefaultScoreDef"/>
+            <xsl:apply-templates select="@* except(@clef.line,@clef.shape,@key.sig,@key.mode,@meter.count,@meter.unit,@meter.sym)" mode="getDefaultScoreDef"/> <!-- bwb warum except lines @lines,-->
             <xsl:choose>
                 <xsl:when test="exists($precedingClef)">
                     <xsl:apply-templates select="$precedingClef/(@clef.line | @clef.shape | @line | @shape)" mode="getDefaultScoreDef"/>
