@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <meta xmlns="http://exist-db.org/xquery/repo">
-    <description>Edirom Online - @SOURCE_MOV@</description>
-    <author>Daniel Röwenstrunk</author>
+  <description>FreiDi PMD-pitchtool - @SOURCE_MOV@</description>
+    <author>@OPERATOR@</author>
     <website/>
     <status>alpha</status>
     <license>GNU-LGPL</license>

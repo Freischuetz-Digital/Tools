@@ -4,7 +4,9 @@
   exclude-result-prefixes="xs"
   version="2.0">
   
-  <xsl:param name="FreiDi-Tools_version">0.1.0</xsl:param>
-  <xsl:param name="transformationOperator">Benjamin W. Bohl</xsl:param>
+  <xsl:variable name="properties" select="doc('properties.xml')"/>
+  
+  <xsl:param name="FreiDi-Tools_version" select="$properties//FreiDi-Tools_version"/>
+  <xsl:param name="transformationOperator" select="$properties//transformationOperator"/>
   
 </xsl:stylesheet>

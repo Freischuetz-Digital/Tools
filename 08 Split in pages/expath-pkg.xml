@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<package xmlns="http://expath.org/ns/pkg" name="http://www.freischuetz-digital.de/apps/PMD-pitchtool/@SOURCE_MOV@" abbrev="FreiDi PMD-pitchtool-@SOURCE_MOV@" version="0.1.0" spec="1.0">
+<package xmlns="http://expath.org/ns/pkg" name="http://www.freischuetz-digital.de/apps/PMD-pitchtool/@SOURCE_MOV@" abbrev="FreiDi PMD-pitchtool-@SOURCE_MOV@" version="@VERSION@" spec="1.0">
     <title>FreiDi PMD-pitchtool - @SOURCE_MOV@</title>
 </package>

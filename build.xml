@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="help" name="processMovs">
     
+    <scriptdef name="substring-before" language="javascript">
+      <attribute name="text" />
+      <attribute name="delimiter" />
+      <attribute name="property" />
+      <![CDATA[
+         var text = attributes.get("text");
+         project.setProperty(attributes.get("property"), text.slice(0, text.indexOf(attributes.get("delimiter"))));
+       ]]>
+    </scriptdef>
+      
     <target name="help">
         <echo>USAGE:</echo>
         <echo>ant musicXMLPartToTime -Dfreidi.in=INPUT_MUSICXML -Dfreidi.out=OUTPUT_MUSICXML</echo>
@@ -146,9 +156,12 @@
         <fail unless="freidi.src.dir" message="Parameter freidi.src.dir is missing"/>
         <fail unless="freidi.out" message="Parameter freidi.out is missing"/>
         <fail unless="freidi.source.mov" message="Parameter freidi.source.mov is missing"/>
-        <fail unless="freidi.exist.col" message="Parameter freidi.exist.col is missing"/>
-        
+      
+        <substring-before text="${freidi.source.mov}" delimiter="_" property="freidi.source" />
+        <property name="freidi.exist.col" value="pitchtool-data/${freidi.source}/${freidi.source.mov}"/>
         <property name="temp.dir" value="temp"/>
+        <xmlproperty file="properties.xml" keeproot="false" collapseattributes="true" />
+        
         
         <mkdir dir="${temp.dir}"/>
         <copy todir="${temp.dir}">
@@ -162,6 +175,8 @@
             <filterset>
                 <filter token="SOURCE_MOV" value="${freidi.source.mov}"/>
                 <filter token="TARGET_PATH" value="${freidi.exist.col}"/>
+              <filter token="OPERATOR" value="${transformationOperator}"/>
+              <filter token="VERSION" value="${FreiDi-Tools_version}"/>
             </filterset>
         </copy>
         
