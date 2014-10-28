@@ -59,6 +59,7 @@
             <xsl:apply-templates mode="framingFile"/>    
         </xsl:result-document>
         
+        <xsl:message select="'Successfully written file ' || $resultPath || '.'"/>
     </xsl:template>
     
     <xsl:template match="mei:notesStmt[not(./mei:*)]" mode="framingFile"/>
