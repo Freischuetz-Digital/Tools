@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <meta xmlns="http://exist-db.org/xquery/repo">
-  <description>FreiDi PMD-pitchtool - @SOURCE_MOV@</description>
+  <description>FreiDi-PMD-pitchtool-@SOURCE_MOV@</description>
     <author>@OPERATOR@</author>
     <website/>
     <status>alpha</status>
