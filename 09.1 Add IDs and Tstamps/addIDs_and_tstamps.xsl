@@ -19,10 +19,10 @@
     
     <xsl:output method="xml" indent="yes"/>
     
-    <xsl:variable name="version" select="'0.9'" as="xs:string"/>
+    <xsl:variable name="version" select="'1.0'" as="xs:string"/>
     
     <!-- TODO: 
-        * add support for tuplets 
+        nothing
     -->
     
     <xsl:template match="/">
@@ -100,11 +100,19 @@
         <xsl:variable name="events" select=".//mei:*[@dur and not(ancestor::mei:*[@dur]) and not(@grace)]"/>
         <xsl:variable name="durations" as="xs:double*">
             
-            <!-- todo: add support for tuplets -->
-            
             <xsl:for-each select="$events">
                 <xsl:variable name="dur" select="1 div number(@dur)" as="xs:double"/>
-                <xsl:value-of select="2 * $dur - ($dur div math:pow(2,if(@dots) then(number(@dots)) else(0)))"/>
+                <xsl:variable name="tupletFactor" as="xs:double">
+                    <xsl:choose>
+                        <xsl:when test="ancestor::mei:tuplet">
+                            <xsl:value-of select="(ancestor::mei:tuplet)[1]/number(@numbase) div (ancestor::mei:tuplet)[1]/number(@num)"/>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:value-of select="1"/>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:variable>
+                <xsl:value-of select="(2 * $dur - ($dur div math:pow(2,if(@dots) then(number(@dots)) else(0)))) * $tupletFactor"/>
             </xsl:for-each>
         </xsl:variable>
         <xsl:variable name="tstamps">
@@ -129,7 +137,6 @@
         <xsl:copy>
             <xsl:apply-templates select="@*" mode="#current"/>
             
-            <!-- todo: add support for different meters -->
             <xsl:attribute name="tstamp" select="($onset * $meter.unit) + 1"/>
             <xsl:apply-templates select="node()" mode="#current"/>
         </xsl:copy>
