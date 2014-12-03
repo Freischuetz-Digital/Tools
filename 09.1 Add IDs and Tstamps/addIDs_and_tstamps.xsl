@@ -4,7 +4,8 @@
     xmlns:math="http://www.w3.org/2005/xpath-functions/math"
     xmlns:xd="http://www.oxygenxml.com/ns/doc/xsl"
     xmlns:mei="http://www.music-encoding.org/ns/mei"
-    exclude-result-prefixes="xs math xd mei"
+    xmlns:uuid="java:java.util.UUID"
+    exclude-result-prefixes="xs math xd mei uuid"
     version="3.0">
     <xd:doc scope="stylesheet">
         <xd:desc>
@@ -18,18 +19,17 @@
     
     <xsl:output method="xml" indent="yes"/>
     
-    <xsl:variable name="version" select="'0.8'" as="xs:string"/>
+    <xsl:variable name="version" select="'0.9'" as="xs:string"/>
     
     <!-- TODO: 
         * add support for tuplets 
-        * add support for different meters
     -->
     
     <xsl:template match="/">
         
-        <xsl:if test="//mei:application[@xml:id = 'addIDs_and_tstamps']">
+        <!--<xsl:if test="//mei:application[@xml:id = 'addIDs_and_tstamps']">
             <xsl:message terminate="yes">This file has already been processed by addIDs_and_tstamps.xsl. Execution stopped.</xsl:message>
-        </xsl:if>
+        </xsl:if>-->
         
         <xsl:variable name="ids">
             <xsl:apply-templates mode="ids"/>
@@ -45,10 +45,12 @@
         
         <xsl:variable name="path" select="tokenize(document-uri(),'/')"/>
         
-        <xsl:result-document href="{'../../../09.1 Added IDs/' || $path[last()-2] || '/' || $path[last() - 1] || '/' || $path[last()]}">
+        <!--<xsl:result-document href="{'../../../09.1 Added IDs/' || $path[last()-2] || '/' || $path[last() - 1] || '/' || $path[last()]}">
             <xsl:copy-of select="$events"/>    
         </xsl:result-document>
+        -->
         
+        <xsl:copy-of select="$events"/>
     </xsl:template>
     
     <xsl:template match="mei:application[not(following-sibling::mei:application)]" mode="ids">
@@ -78,8 +80,18 @@
     
     <xsl:template match="mei:measure//mei:*[not(@xml:id)]" mode="ids">
         <xsl:copy>
-            <xsl:attribute name="xml:id" select="generate-id()"/>
+            <xsl:attribute name="xml:id" select="'x' || uuid:randomUUID()"/>
             <xsl:apply-templates select="node() | @*" mode="#current"/>
+        </xsl:copy>
+    </xsl:template>
+    
+    <xsl:template match="mei:measure" mode="events">
+        <xsl:variable name="meter.unit" select="(preceding::mei:scoreDef[@meter.unit])[1]/@meter.unit cast as xs:integer" as="xs:integer"/>
+          
+        <xsl:copy>
+            <xsl:apply-templates select="node() | @*" mode="#current">
+                <xsl:with-param name="meter.unit" select="$meter.unit" tunnel="yes"/>
+            </xsl:apply-templates>
         </xsl:copy>
     </xsl:template>
     
@@ -111,14 +123,14 @@
     
     <xsl:template match="mei:layer//mei:*[@dur and not(ancestor::mei:*[@dur]) and not(@grace)]" mode="events">
         <xsl:param name="tstamps" tunnel="yes"/>
-        
+        <xsl:param name="meter.unit" tunnel="yes"/>
         <xsl:variable name="id" select="@xml:id" as="xs:string"/>
         <xsl:variable name="onset" select="$tstamps//*[@id=$id]/@onset"/>
         <xsl:copy>
             <xsl:apply-templates select="@*" mode="#current"/>
             
             <!-- todo: add support for different meters -->
-            <xsl:attribute name="tstamp" select="($onset * 8) + 1"/>
+            <xsl:attribute name="tstamp" select="($onset * $meter.unit) + 1"/>
             <xsl:apply-templates select="node()" mode="#current"/>
         </xsl:copy>
     </xsl:template>
