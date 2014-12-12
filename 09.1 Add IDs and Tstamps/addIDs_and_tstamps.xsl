@@ -27,9 +27,9 @@
     
     <xsl:template match="/">
         
-        <!--<xsl:if test="//mei:application[@xml:id = 'addIDs_and_tstamps']">
+        <xsl:if test="//mei:application[@xml:id = 'addIDs_and_tstamps']">
             <xsl:message terminate="yes">This file has already been processed by addIDs_and_tstamps.xsl. Execution stopped.</xsl:message>
-        </xsl:if>-->
+        </xsl:if>
         
         <xsl:variable name="ids">
             <xsl:apply-templates mode="ids"/>
@@ -45,12 +45,12 @@
         
         <xsl:variable name="path" select="tokenize(document-uri(),'/')"/>
         
-        <!--<xsl:result-document href="{'../../../09.1 Added IDs/' || $path[last()-2] || '/' || $path[last() - 1] || '/' || $path[last()]}">
+        <xsl:result-document href="{'../../../09.1 Added IDs/' || $path[last()-2] || '/' || $path[last() - 1] || '/' || $path[last()]}">
             <xsl:copy-of select="$events"/>    
         </xsl:result-document>
-        -->
         
-        <xsl:copy-of select="$events"/>
+        
+        <!--<xsl:copy-of select="$events"/>-->
     </xsl:template>
     
     <xsl:template match="mei:application[not(following-sibling::mei:application)]" mode="ids">
