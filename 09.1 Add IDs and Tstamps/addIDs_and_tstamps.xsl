@@ -134,7 +134,23 @@
                         </xsl:otherwise>
                     </xsl:choose>
                 </xsl:variable>
-                <xsl:value-of select="(2 * $dur - ($dur div math:pow(2,if(@dots) then(number(@dots)) else(0)))) * $tupletFactor"/>
+                <xsl:variable name="dots" as="xs:double">
+                    <xsl:choose>
+                        <xsl:when test="@dots">
+                            <xsl:value-of select="number(@dots)"/>
+                        </xsl:when>
+                        <xsl:when test="local-name() = 'bTrem' and child::mei:*/@dots">
+                            <xsl:value-of select="child::mei:*[@dots]/number(@dots)"/>
+                        </xsl:when>
+                        <xsl:when test="local-name() = 'fTrem' and child::mei:*/@dots">
+                            <xsl:value-of select="child::mei:*[@dots][1]/number(@dots)"/>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:value-of select="0"/>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:variable>
+                <xsl:value-of select="(2 * $dur - ($dur div math:pow(2,$dots))) * $tupletFactor"/>
             </xsl:for-each>
         </xsl:variable>
         <xsl:variable name="tstamps">
