@@ -57,11 +57,11 @@
                         }
                         
                         .sylBox .text.middle {
-                        color: #666666;
+                        color: #598adb;
                         }
                         
                         .sylBox .text.terminal {
-                        color: #a53913;
+                        color: #f44c18;
                         }
                         
                     </style>
@@ -89,7 +89,10 @@
     
     <xsl:template match="mei:syl">
         <div class="sylBox">
-            <div class="tstamp"><xsl:value-of select="string(ancestor::mei:*[@tstamp]/@tstamp)"/></div>
+            
+            <xsl:variable name="pitch" select="upper-case(ancestor::mei:*[@pname][1]/@pname) || ancestor::mei:*[@oct][1]/@oct"/>
+            
+            <div class="tstamp"><xsl:value-of select="string(ancestor::mei:*[@tstamp]/@tstamp) || ' (' || $pitch || ')'"/></div>
             <xsl:variable name="class" as="xs:string">
                 <xsl:choose>
                     <xsl:when test="@wordpos = 'i'">initial</xsl:when>
