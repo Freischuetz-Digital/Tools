@@ -25,11 +25,14 @@
     <xsl:variable name="sourceID" select="substring-before(//mei:mdiv/@xml:id,'_')" as="xs:string"/>
     <xsl:variable name="movID" select="//mei:mdiv/@xml:id" as="xs:string"/>
     
+    <xsl:variable name="firstMeasures" select="$files//mei:measure[not(preceding::mei:measure)]/@xml:id" as="xs:string*"/>
+    
     <xsl:variable name="resultPath" select="substring-before($filePath,'sourcePrep') || 'sourcePrep/12%20concatenated%20Pages/' || $sourceID || '/' || $movID || '.xml'" as="xs:string"/>
     
     <xsl:template match="/">
-        
         <xsl:message>Processing folder "<xsl:value-of select="$filePath"/>/" with concatenateSystems.xsl</xsl:message>
+        
+        <xsl:message select="'first measures are: ' || string-join($firstMeasures,', ')"/>
         
         <!-- TODO: include other proofreading components in this test -->
         <xsl:for-each select="$files">
@@ -148,6 +151,11 @@
                 </section>
             </xsl:for-each-group>
         </xsl:copy>
+    </xsl:template>
+    
+    <xsl:template match="mei:measure[@xml:id = $firstMeasures]">
+        <xsl:message select="'shouldnt there be a page- or systembreak before this measure??? If there is a preceding scoreDef, this needs to be reconsidered, though…'"/>
+        <xsl:next-match/>
     </xsl:template>
         
     <xsl:template match="node() | @*" mode="#all">
