@@ -123,7 +123,14 @@
                 
                 <xsl:variable name="fileName" select="tokenize(string(document-uri($surface/root())),'/')[last()]" as="xs:string"/>
                 <xsl:if test="not(contains($fileName,'_sys')) or ends-with($fileName,'_sys1.xml')">
-                    <xsl:apply-templates select="$surface" mode="facsimiles"/>
+                    <xsl:copy>
+                        <xsl:apply-templates select="@*" mode="facsimiles"/>
+                        <xsl:apply-templates select="mei:graphic" mode="facsimiles"/>
+                        <xsl:variable name="id" select="@xml:id"/>
+                        <xsl:variable name="zones" select="$surfaces//mei:zone[parent::mei:surface[@xml:id = $id]]"/>
+                        <xsl:apply-templates select="$zones" mode="facsimiles"/>    
+                    </xsl:copy>
+                    
                 </xsl:if>                
             </xsl:for-each>
         </xsl:copy>
