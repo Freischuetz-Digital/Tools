@@ -30,8 +30,8 @@
     <xsl:variable name="docPath" select="document-uri(/)"/>
     <xsl:variable name="cpMarksPath" select="substring-before($docPath,'/musicSources/') || '/musicSources/sourcePrep/11.1%20ShortcutList/cpMarks.xml'" as="xs:string"/>
     <xsl:variable name="cpMarks" select="doc($cpMarksPath)//mei:cpMark" as="node()*"/>
-    <xsl:variable name="sourcePath" select="substring-after($docPath,'sourcePrep/09.1%20Added%20/IDs/')" as="xs:string"/>
-    <xsl:variable name="resultFile" select="substring-before($docPath,'sourcePrep/09.1') || 'sourcePrep/09.2%20resolvedShortCuts%20events/' || $sourcePath" as="xs:string"/>
+    <xsl:variable name="sourcePath" select="substring-after($docPath,'sourcePrep/10%20concatenated%20Pages/')" as="xs:string"/>
+    <xsl:variable name="resultFile" select="substring-before($docPath,'sourcePrep/10') || 'sourcePrep/11%20resolvedShortCuts%20events/' || $sourcePath" as="xs:string"/>
     
     <xsl:variable name="music" select=".//mei:music" as="node()"/>
     

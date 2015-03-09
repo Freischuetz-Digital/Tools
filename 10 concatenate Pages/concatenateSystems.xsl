@@ -4,7 +4,8 @@
     xmlns:math="http://www.w3.org/2005/xpath-functions/math"
     xmlns:xd="http://www.oxygenxml.com/ns/doc/xsl"
     xmlns:mei="http://www.music-encoding.org/ns/mei"
-    exclude-result-prefixes="xs math xd mei"
+    xmlns:uuid="java:java.util.UUID"
+    exclude-result-prefixes="xs math xd mei uuid"
     version="3.0">
     <xd:doc scope="stylesheet">
         <xd:desc>
@@ -27,7 +28,7 @@
     
     <xsl:variable name="firstMeasures" select="$files//mei:measure[not(preceding::mei:measure)]/@xml:id" as="xs:string*"/>
     
-    <xsl:variable name="resultPath" select="substring-before($filePath,'sourcePrep') || 'sourcePrep/12%20concatenated%20Pages/' || $sourceID || '/' || $movID || '.xml'" as="xs:string"/>
+    <xsl:variable name="resultPath" select="substring-before($filePath,'sourcePrep') || 'sourcePrep/10%20concatenated%20Pages/' || $sourceID || '/' || $movID || '.xml'" as="xs:string"/>
     
     <xsl:template match="/">
         <xsl:message>Processing folder "<xsl:value-of select="$filePath"/>/" with concatenateSystems.xsl</xsl:message>
@@ -73,7 +74,7 @@
             
             <application xmlns="http://www.music-encoding.org/ns/mei" xml:id="concatenateSystems.xsl">
                 <name>concatenateSystems.xsl</name>
-                <ptr target="https://github.com/Freischuetz-Digital/Tools/blob/develop/12%20concatenated%20Pages/concatenateSystems.xsl"/>
+                <ptr target="https://github.com/Freischuetz-Digital/Tools/blob/develop/10%20concatenated%20Pages/concatenateSystems.xsl"/>
             </application>
             
         </xsl:copy>
@@ -154,7 +155,24 @@
     </xsl:template>
     
     <xsl:template match="mei:measure[@xml:id = $firstMeasures]">
-        <xsl:message select="'shouldnt there be a page- or systembreak before this measure??? If there is a preceding scoreDef, this needs to be reconsidered, though…'"/>
+        <xsl:variable name="zoneID" select="replace(@facs,'#','')"/>
+        <xsl:variable name="currentFile.name" select="tokenize(document-uri(./root()),'/')[last()]"/>
+        <xsl:variable name="currentFile" select="./root()"/>
+        
+        <xsl:choose>
+            <xsl:when test="matches($currentFile.name,'_sys[23456789]\d?\.xml')">
+                <xsl:message select="'adding sb before ' || @xml:id"/>
+                <sb xml:id="{'s' || uuid:randomUUID()}" xmlns="http://www.music-encoding.org/ns/mei">
+                    <xsl:copy-of select="$currentFile//mei:annot[@type = 'providedScoreDef']"/>
+                </sb>
+            </xsl:when>
+            <xsl:otherwise>
+                <pb xml:id="{'p' || uuid:randomUUID()}" xmlns="http://www.music-encoding.org/ns/mei" facs="#{$files//mei:surface[.//mei:zone = $zoneID]/@xml.id}">
+                    <xsl:copy-of select="$currentFile//mei:annot[@type = 'providedScoreDef']"/>
+                </pb>
+            </xsl:otherwise>
+        </xsl:choose>
+        
         <xsl:next-match/>
     </xsl:template>
         
