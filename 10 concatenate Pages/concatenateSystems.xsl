@@ -167,6 +167,7 @@
                 </sb>
             </xsl:when>
             <xsl:otherwise>
+                <xsl:variable name="surfaceID" select="$files//mei:zone[@xml:id = $zoneID][1]/parent::mei:surface/@xml:id"/>
                 <pb xml:id="{'p' || uuid:randomUUID()}" xmlns="http://www.music-encoding.org/ns/mei" facs="#{$surfaceID}">
                     <xsl:copy-of select="$currentFile//mei:annot[@type = 'providedScoreDef']"/>
                 </pb>
