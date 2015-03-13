@@ -30,8 +30,11 @@
     <xsl:variable name="docPath" select="document-uri(/)"/>
     <xsl:variable name="cpMarksPath" select="substring-before($docPath,'/musicSources/') || '/musicSources/sourcePrep/11.1%20ShortcutList/cpMarks.xml'" as="xs:string"/>
     <xsl:variable name="cpMarks" select="doc($cpMarksPath)//mei:cpMark" as="node()*"/>
-    <xsl:variable name="sourcePath" select="substring-after($docPath,'sourcePrep/10%20concatenated%20Pages/')" as="xs:string"/>
-    <xsl:variable name="resultFile" select="substring-before($docPath,'sourcePrep/10') || 'sourcePrep/11%20resolvedShortCuts%20events/' || $sourcePath" as="xs:string"/>
+    <xsl:variable name="sourcePath.events" select="substring-after($docPath,'sourcePrep/10%20concatenated%20Pages/')" as="xs:string"/>
+    <xsl:variable name="resultFile.events" select="substring-before($docPath,'sourcePrep/10') || 'sourcePrep/11%20resolvedShortCuts%20events/' || $sourcePath.events" as="xs:string"/>
+    
+    <xsl:variable name="sourcePath.controlEvents" select="substring-after($docPath,'sourcePrep/12%20proven%20ControlEvents/')" as="xs:string"/>
+    <xsl:variable name="resultFile.controlEvents" select="substring-before($docPath,'sourcePrep/12') || 'sourcePrep/13%20resolvedShortCuts%20controlEvents/' || $sourcePath.controlEvents" as="xs:string"/>
     
     <xsl:variable name="music" select=".//mei:music" as="node()"/>
     
@@ -61,11 +64,11 @@
         <xsl:if test="$mode != ('events','controlEvents','full')">
             <xsl:message terminate="yes" select="'$mode=' || $mode || ' unsupported. Please use mode _events_, _controlEvents_ or _full_ instead.'"/>
         </xsl:if>
-        <xsl:if test="$mode = 'events' and not(contains($docPath,'/sourcePrep/09.1'))">
-            <xsl:message terminate="yes" select="'$mode=events requires the file to be stored in 09.1 Added IDs.'"/>
+        <xsl:if test="$mode = 'events' and not(contains($docPath,'/sourcePrep/10'))">
+            <xsl:message terminate="yes" select="'$mode=events requires the file to be stored in 10 concatenated Pages.'"/>
         </xsl:if>
-        <xsl:if test="$mode = 'controlEvents' and not(contains($docPath,'/sourcePrep/10%20Proven'))">
-            <xsl:message terminate="yes" select="'$mode=controlEvents requires the file to be stored in 10 Proven ControlEvents.'"/>
+        <xsl:if test="$mode = 'controlEvents' and not(contains($docPath,'/sourcePrep/12%20Proven'))">
+            <xsl:message terminate="yes" select="'$mode=controlEvents requires the file to be stored in 12 Proven ControlEvents.'"/>
         </xsl:if>
         <xsl:if test="$mode = 'full'">
             <xsl:message terminate="yes" select="'$mode=full is not supported in the FreiDi workflow.'"/>
@@ -74,14 +77,18 @@
             <xsl:message terminate="yes" select="'cpMarks.xml is missing from the expected location at ' || $cpMarksPath || '. Processing stopped.'"/>
         </xsl:if>
         
+        <xsl:if test="$mode = 'controlEvents' and not(.//mei:change//mei:ptr[starts-with(@target,'resolveShortCuts.xsl_v')])">
+            <xsl:message terminate="yes" select="'$mode=controlEvents requires that the $mode=events has been run on this file already.'"/>
+        </xsl:if>
+        
         <xsl:if test="$cpMarks.enhanced//@ref.startid">
             <xsl:message terminate="yes" select="'cpMarks with @ref.startid are not supported yet. Please update resolveShortCuts.xsl.'"/>
         </xsl:if>
         <xsl:if test="$music//mei:beatRpt">
-            <xsl:message terminate="yes" select="'beatRpts should be working, but havent been tested yet. Please check!'"/>
+            <xsl:message terminate="yes" select="'beatRpts should be working, but havent been tested yet. Please check, and if everything works as expected, remove terminate=yes in this xsl!'"/>
         </xsl:if>
         <xsl:if test="$music//mei:halfmRpt">
-            <xsl:message terminate="yes" select="'halfmRpts should be working, but havent been tested yet. Please check!'"/>
+            <xsl:message terminate="yes" select="'halfmRpts should be working, but havent been tested yet. Please check, and if everything works as expected, remove terminate=yes in this xsl!'"/>
         </xsl:if>
         
         <!-- resolve all cpMarks that point to a staff which contains direct content only -->
@@ -102,7 +109,7 @@
             </xsl:apply-templates>
         </xsl:variable>
         
-        <xsl:result-document href="{$resultFile}">
+        <xsl:result-document href="{$resultFile.events}">
             <xsl:copy-of select="$resolvedAllMarks"/>    
         </xsl:result-document>
         
@@ -131,13 +138,34 @@
                 <respStmt>
                     <persName>Johannes Kepper</persName>
                 </respStmt>
-                <changeDesc>
-                    <p>
-                        Resolved shortcuts (for <xsl:value-of select="$mode"/> only) by using information from <xsl:value-of select="$cpMarksPath"/>
-                        using <ptr target="resolveShortCuts.xsl_v{$xsl.version}"/>. Also resolved all mRpt, bTrems
-                        and fTrems.
-                    </p>
-                </changeDesc>
+                <xsl:choose>
+                    <xsl:when test="$mode = 'events'">
+                        <changeDesc>
+                            <p>
+                                Resolved colla parte and copy instructions for events by using information from <xsl:value-of select="$cpMarksPath"/>
+                                using <ptr target="resolveShortCuts.xsl_v{$xsl.version}"/>. Also resolved all mRpt, bTrems
+                                and fTrems.
+                            </p>
+                        </changeDesc>        
+                    </xsl:when>
+                    <xsl:when test="$mode = 'controlEvents'">
+                        <changeDesc>
+                            <p>
+                                Resolved abbreviated controlEvents according to <xsl:value-of select="$cpMarksPath"/>
+                                using <ptr target="resolveShortCuts.xsl_v{$xsl.version}"/>. Events such as notes are expected to be resolved already.
+                            </p>
+                        </changeDesc>
+                    </xsl:when>
+                    <xsl:when test="$mode = 'full'">
+                        <changeDesc>
+                            <p>
+                                Resolved shortcuts (for <xsl:value-of select="$mode"/> only) by using information from <xsl:value-of select="$cpMarksPath"/>
+                                using <ptr target="resolveShortCuts.xsl_v{$xsl.version}"/>. Also resolved all mRpt, bTrems
+                                and fTrems.
+                            </p>
+                        </changeDesc>
+                    </xsl:when>
+                </xsl:choose>
                 <date isodate="{substring(string(current-date()),1,10)}"/>
             </change>
         </xsl:copy>
@@ -445,23 +473,44 @@
                     <xsl:apply-templates select="node() | @*" mode="#current"/>
                     
                     <xsl:variable name="affectedStaves" select="mei:staff[.//mei:mRpt]/@n" as="xs:string*"/>
-                    <xsl:variable name="preceding.measure" select="preceding::mei:measure[1]"/>
                     <xsl:variable name="measure" select="."/>
                     
                     <xsl:for-each select="$affectedStaves">
                         <xsl:variable name="staff.n" select="."/>
+                        
+                        <!--<xsl:variable name="preceding.measure" select="$measure/preceding::mei:measure[not(mei:staff[@n = $staff.n]//mei:mRpt)][1]"/>-->
+                        
                         <xsl:variable name="targetMeasure" select="$measure/preceding::mei:measure[mei:staff[@n = $staff.n and not(.//mei:mRpt) and not(.//mei:mSpace)]][1]"/>
-                        <xsl:variable name="controlEvents" select="$targetMeasure//mei:*[not(parent::mei:staff) and @staff = $staff.n and not(local-name() = 'cpMark')]"/>
+                        <xsl:variable name="controlEvents" select="$targetMeasure/mei:*[not(local-name() = 'staff') and .//@staff = $staff.n and not(local-name() = 'cpMark') and not(.//mei:cpMark)]"/>
                         
                         <!--<xsl:message select="count($controlEvents) || ' controlEvents from mRpt #' || ($measure/mei:staff[@n = $staff.n]//mei:mRpt)[1]/@xml:id"/>-->
                         
                         <xsl:for-each select="$controlEvents">
+                            
+                            <xsl:variable name="controlEvent" select="." as="node()"/>                            
                             <choice xmlns="http://www.music-encoding.org/ns/mei" xml:id="c{uuid:randomUUID()}">
                                 <abbr type="mRpt"/>
                                 <expan evidence="#{($measure/mei:staff[@n = $staff.n]//mei:mRpt)[1]/@xml:id}">
-                                    <xsl:apply-templates select="." mode="adjustMaterial"/>
+                                    
+                                    <xsl:choose>
+                                        <xsl:when test="local-name() != 'choice'">
+                                            <xsl:apply-templates select="." mode="adjustMaterial"/>        
+                                        </xsl:when>
+                                        <xsl:when test="local-name() = 'choice' and count(./mei:reg | ./mei:expan) = 1">
+                                            <xsl:apply-templates select="./mei:reg | ./mei.expan" mode="adjustMaterial"/>
+                                        </xsl:when>
+                                        <xsl:when test="local-name() = 'choice' and count(./mei:reg | ./mei:expan) gt 1">
+                                            <choice xmlns="http://www.music-encoding.org/ns/mei" xml:id="c{uuid:randomUUID()}" corresp="{@xml:id}">
+                                                <xsl:for-each select="(./mei:reg | ./mei:expan)">
+                                                    <xsl:apply-templates select="." mode="adjustMaterial"/>    
+                                                </xsl:for-each>
+                                            </choice>
+                                        </xsl:when>
+                                    </xsl:choose>
+                                    
                                 </expan>
-                            </choice>    
+                            </choice>       
+                                                            
                         </xsl:for-each>
                     </xsl:for-each>    
                 </xsl:copy>
@@ -477,6 +526,12 @@
         <xsl:variable name="staff" select="ancestor::mei:measure/mei:staff[@n = $staff.n]" as="node()"/>
         
         <xsl:choose>
+            
+            <!-- this cpMark should have been processed in $mode=events already, so no need to touch it again -->
+            <xsl:when test="$mode = 'controlEvents'">
+                <xsl:next-match/>
+            </xsl:when>
+            
             <!-- this cpMark is processed in a different run -->
             <xsl:when test="not(@xml:id = $cpMark.ids)">
                 <xsl:next-match/>
@@ -743,11 +798,13 @@
 
         </xsl:choose>
     </xsl:template>
-    
+        
     <xsl:template match="mei:measure" mode="resolveMarks">
         <xsl:param name="cpInstructions" tunnel="yes"/>
         <xsl:param name="cpMarks.enhanced" tunnel="yes"/>
         <xsl:param name="cpMark.ids" as="xs:string*" tunnel="yes"/>
+        
+        <xsl:variable name="target.measure" select="."/>
         
         <xsl:copy>
             <xsl:apply-templates select="node() | (@* except @meter.count)" mode="#current"/>
@@ -759,25 +816,79 @@
             <xsl:for-each select="$affectedStaves">
                 
                 <xsl:variable name="staff.id" select="@xml:id"/>
-                <xsl:variable name="cpInstruction" select="$cpInstructions/descendant-or-self::*[@targetStaff.id = $staff.id]"/>
-                <xsl:variable name="cpMark" select="$cpMarks.enhanced/descendant-or-self::*[@xml:id = $cpInstruction/@cpMark.id and @xml:id = $cpMark.ids][1]"/>
+                <xsl:variable name="cpInstructions.all" select="$cpInstructions/descendant-or-self::*[@targetStaff.id = $staff.id]"/>
+                <xsl:variable name="local.cpMarks" select="$cpMarks.enhanced/descendant-or-self::*[@xml:id = $cpInstructions.all/@cpMark.id and @xml:id = $cpMark.ids]"/>
+                <xsl:variable name="local.cpInstructions" as="node()*">
+                    <xsl:perform-sort select="$cpInstructions.all/descendant-or-self::*[@cpMark.id = $local.cpMarks/@xml:id]">
+                        <xsl:sort select="@target.tstamp.first" data-type="number"/>
+                        <xsl:sort select="@target.tstamp.last" data-type="number"/>
+                    </xsl:perform-sort>
+                </xsl:variable>
                 
-                <xsl:variable name="controlEvents" select="$music/id($cpInstruction/@sourceStaff.id)/parent::mei:measure/mei:*[
-                    if($cpMark/@ref.staff) then(.//@staff = $cpMark/@ref.staff) else(.//@staff = $cpMark/@staff) 
-                    and (if($cpMark/@ref.layer and .//@layer) then(.//@layer = $cpMark/@ref.layer) else(
-                        if($cpMark/@layer and .//@layer) then(.//@layer = $cpMark/@layer) else(true())))
-                        and number(@tstamp) ge number($cpInstruction/@tstamp.first)
-                        and (not(starts-with(.//@tstamp2,'0m+')) or number(substring-after(.//@tstamp2,'m+')) le number($cpInstruction/@tstamp.last))
-                    and not(local-name(.) = 'cpMark')]"/>
+                <xsl:variable name="controlEvents" as="node()*">
+                    <xsl:for-each select="$local.cpInstructions">
+                        <xsl:variable name="pos" select="position()"/>
+                        <xsl:variable name="current.cpInstruction" select="." as="node()"/>
+                        <xsl:variable name="current.cpMark" select="$local.cpMarks[$pos]" as="node()"/>
+                        
+                        <xsl:variable name="current.measure" select="$music/id($current.cpInstruction/@sourceStaff.id)/ancestor::mei:measure"/>
+                        <xsl:variable name="ce.onStaff" as="node()*">
+                            <xsl:choose>
+                                <xsl:when test="$current.cpMark/@ref.staff">
+                                    <xsl:sequence select="$current.measure/mei:*[.//@staff = $current.cpMark/@ref.staff]"/>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <xsl:sequence select="$current.measure/mei:*[.//@staff = $current.cpMark/@staff]"/>
+                                </xsl:otherwise>
+                            </xsl:choose>
+                        </xsl:variable>
+                        <xsl:variable name="ce.onLayer" as="node()*">
+                            <xsl:choose>
+                                <xsl:when test="$current.cpMark/@ref.layer">
+                                    <xsl:sequence select="$ce.onStaff/descendant-or-self::mei:*[parent::mei:measure and .//@layer = $current.cpMark/@ref.layer]"/>
+                                </xsl:when>
+                                <xsl:when test="$current.cpMark/@layer">
+                                    <xsl:sequence select="$ce.onStaff/descendant-or-self::mei:*[parent::mei:measure and .//@layer = $current.cpMark/@layer]"/>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <xsl:sequence select="$ce.onStaff/descendant-or-self::mei:*[parent::mei:measure]"/>
+                                </xsl:otherwise>
+                            </xsl:choose>
+                        </xsl:variable>
+                        
+                        <xsl:for-each select="$ce.onLayer/descendant-or-self::mei:*[parent::mei:measure and number(.//@tstamp) ge number($current.cpInstruction/@source.tstamp.first) and (not(starts-with((.//@tstamp2)[1],'0m+')) or number(substring-after((.//@tstamp2)[1],'m+')) le number($current.cpInstruction/@source.tstamp.last))
+                            and not('cpMark' = descendant-or-self::mei:*/local-name())]">
+                            <elem cpMark.id="{$current.cpMark/@xml:id}">
+                                <xsl:sequence select="."/>
+                            </elem>
+                        </xsl:for-each>
+                        
+                        
+                    </xsl:for-each>
+                </xsl:variable>
                 
                 <!--<xsl:message select="string(count($controlEvents)) || ' controlEvents from cpMark #' || $cpMark/@xml:id"/>-->
                 
                 <xsl:if test="$mode = ('controlEvents','full')">
                     <xsl:for-each select="$controlEvents">
+                        <!-- debug -->
+                        <xsl:message select="'expanding controlEvent into ' || $target.measure/@xml:id"/>
                         <choice xmlns="http://www.music-encoding.org/ns/mei" xml:id="c{uuid:randomUUID()}">
                             <abbr type="cpMark"/>
-                            <expan evidence="#{$cpMark/@xml:id}">
-                                <xsl:apply-templates select="." mode="adjustMaterial"/>
+                            <expan evidence="#{@cpMark.id}">
+                                <xsl:choose>
+                                    <xsl:when test="not(local-name(child::mei:*) = 'choice')">
+                                        <xsl:apply-templates select="child::mei:*" mode="adjustMaterial"/>        
+                                    </xsl:when>
+                                    <xsl:when test="count(child::mei:choice/(mei:reg | mei:expan)) = 1">
+                                        <xsl:apply-templates select="child::mei:choice/(mei:reg | mei:expan)/mei:*" mode="adjustMaterial"/>
+                                    </xsl:when>
+                                    <xsl:otherwise>
+                                        <choice xmlns="http://www.music-encoding.org/ns/mei" xml:id="c{uuid:randomUUID()}">
+                                            <xsl:apply-templates select="child::mei:choice/(mei:reg | mei:expan)" mode="adjustMaterial"/>
+                                        </choice>
+                                    </xsl:otherwise>
+                                </xsl:choose>
                             </expan>
                         </choice>    
                     </xsl:for-each>
