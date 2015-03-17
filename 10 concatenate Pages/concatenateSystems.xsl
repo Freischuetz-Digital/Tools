@@ -40,7 +40,7 @@
             <xsl:variable name="file" select="." as="node()"/>
             <xsl:variable name="path" select="tokenize(string(document-uri($file)),'/')[last()]" as="xs:string"/>
             
-            <xsl:if test="not($file//mei:application[@xml:id='generateSystemFiles.xsl'] and $file//mei:change//mei:ref[@target='#generateSystemFiles.xsl'])">
+            <xsl:if test="not($file//mei:application[@xml:id='generateSystemFiles.xsl'] and $file//mei:change//mei:ref[contains(@target,'generateSystemFiles.xsl')])">
                 <xsl:message terminate="yes">File "<xsl:value-of select="$path"/>" has not been processed by generateSystemFiles.xsl. Please check!</xsl:message>
             </xsl:if>
             
