@@ -154,12 +154,15 @@
         </xsl:copy>
     </xsl:template>
     
-    <xsl:template match="mei:measure[@xml:id = $firstMeasures]">
+    <xsl:template match="mei:measure">
         <xsl:variable name="zoneID" select="replace(@facs,'#','')"/>
         <xsl:variable name="currentFile.name" select="tokenize(document-uri(./root()),'/')[last()]"/>
         <xsl:variable name="currentFile" select="./root()"/>
         
         <xsl:choose>
+            <xsl:when test="not(@xml:id = $firstMeasures)">
+                <xsl:next-match/>
+            </xsl:when>
             <xsl:when test="matches($currentFile.name,'_sys[23456789]\d?\.xml')">
                 <xsl:message select="'adding sb before ' || @xml:id"/>
                 <sb xml:id="{'s' || uuid:randomUUID()}" xmlns="http://www.music-encoding.org/ns/mei">

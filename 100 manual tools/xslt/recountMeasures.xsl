@@ -20,8 +20,8 @@
     
     <xsl:output indent="yes" method="xml" xpath-default-namespace="http://www.music-encoding.org/ns/mei"/>
     
-    <xsl:param name="startID" select="'KA2_mov10_measure303'"/>
-    <xsl:param name="diff" select="-5"/>
+    <xsl:param name="startID" select="'ED-kl_mov6_measure2'"/>
+    <xsl:param name="diff" select="-1"/>
     
     <xsl:variable name="measures" select="id($startID) | id($startID)/following-sibling::mei:measure" as="node()*"/>
     
