@@ -160,9 +160,7 @@
         <xsl:variable name="currentFile" select="./root()"/>
         
         <xsl:choose>
-            <xsl:when test="not(@xml:id = $firstMeasures)">
-                <xsl:next-match/>
-            </xsl:when>
+            <xsl:when test="not(@xml:id = $firstMeasures)"/>
             <xsl:when test="matches($currentFile.name,'_sys[23456789]\d?\.xml')">
                 <xsl:message select="'adding sb before ' || @xml:id"/>
                 <sb xml:id="{'s' || uuid:randomUUID()}" xmlns="http://www.music-encoding.org/ns/mei">
