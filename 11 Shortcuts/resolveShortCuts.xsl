@@ -61,7 +61,7 @@
         <xsl:message select="'total: ' || count($cpMarks.enhanced) || ', first: ' || count($cpInstructions.first) || ', second: ' || count($cpInstructions.second)"></xsl:message>
         
         <!-- Test if everything is correct about the workflow -->
-        <xsl:if test="$mode != ('events','controlEvents','full')">
+        <xsl:if test="not($mode = ('events','controlEvents','full'))">
             <xsl:message terminate="yes" select="'$mode=' || $mode || ' unsupported. Please use mode _events_, _controlEvents_ or _full_ instead.'"/>
         </xsl:if>
         <xsl:if test="$mode = 'events' and not(contains($docPath,'/sourcePrep/10'))">
