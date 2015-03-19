@@ -110,7 +110,7 @@
         </xsl:variable>
         
         <xsl:result-document href="{$resultFile.events}">
-            <xsl:copy-of select="$resolvedAllMarks"/>    
+            <xsl:apply-templates select="$resolvedAllMarks" mode="cleanup"/>    
         </xsl:result-document>
         
         <!--<xsl:copy-of select="$cpInstructions"/>-->
@@ -1113,6 +1113,13 @@
                 <xsl:message select="'cpMark ' || $cpMark/@xml:id || ' is strange and should not be available in Freischütz. It copies music from a previous measure and a different staff…'"/>
             </xsl:when>
         </xsl:choose>
+    </xsl:template>
+    
+    <!-- mode cleanup -->
+    <xsl:template match="mei:abbr/@tstamp" mode="cleanup"/>
+    <xsl:template match="mei:abbr/@tstamp2" mode="cleanup"/>
+    <xsl:template match="mei:expan/@evidence" mode="cleanup">
+        <xsl:attribute name="evidence" select="replace(.,'#','')"/>
     </xsl:template>
     
     <xsl:template match="node() | @*" mode="#all">
