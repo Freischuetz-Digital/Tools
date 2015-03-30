@@ -36,6 +36,7 @@
     <xsl:variable name="sourcePath.controlEvents" select="substring-after($docPath,'sourcePrep/12%20proven%20ControlEvents/')" as="xs:string"/>
     <xsl:variable name="resultFile.controlEvents" select="substring-before($docPath,'sourcePrep/12') || 'sourcePrep/13%20resolvedShortCuts%20controlEvents/' || $sourcePath.controlEvents" as="xs:string"/>
     
+    <xsl:variable name="originalFile" select="/" as="node()"/>
     <xsl:variable name="music" select=".//mei:music" as="node()"/>
     
     <xsl:template match="/">
@@ -61,7 +62,7 @@
         <xsl:message select="'total: ' || count($cpMarks.enhanced) || ', first: ' || count($cpInstructions.first) || ', second: ' || count($cpInstructions.second)"></xsl:message>
         
         <!-- Test if everything is correct about the workflow -->
-        <xsl:if test="$mode != ('events','controlEvents','full')">
+        <xsl:if test="not($mode = ('events','controlEvents','full'))">
             <xsl:message terminate="yes" select="'$mode=' || $mode || ' unsupported. Please use mode _events_, _controlEvents_ or _full_ instead.'"/>
         </xsl:if>
         <xsl:if test="$mode = 'events' and not(contains($docPath,'/sourcePrep/10'))">
@@ -94,6 +95,8 @@
         <!-- resolve all cpMarks that point to a staff which contains direct content only -->
         <xsl:variable name="resolvedMarks">
             <xsl:apply-templates mode="resolveMarks" select="$resolvedRpts">
+                <xsl:with-param name="run" select="1" as="xs:integer" tunnel="yes"/>
+                <xsl:with-param name="material" select="$resolvedRpts//mei:music" as="node()" tunnel="yes"/>
                 <xsl:with-param name="cpInstructions" select="$cpInstructions" tunnel="yes"/>
                 <xsl:with-param name="cpMarks.enhanced" select="$cpMarks.enhanced" tunnel="yes"/>
                 <xsl:with-param name="cpMark.ids" select="$cpInstructions.first" as="xs:string*" tunnel="yes"/>
@@ -103,6 +106,8 @@
         <!-- resolve all cpMarks which refer to staves also containing cpMarks -->
         <xsl:variable name="resolvedAllMarks">
             <xsl:apply-templates mode="resolveMarks" select="$resolvedMarks">
+                <xsl:with-param name="run" select="2" as="xs:integer" tunnel="yes"/>
+                <xsl:with-param name="material" select="$resolvedMarks//mei:music" as="node()" tunnel="yes"/>
                 <xsl:with-param name="cpInstructions" select="$cpInstructions" tunnel="yes"/>
                 <xsl:with-param name="cpMarks.enhanced" select="$cpMarks.enhanced" tunnel="yes"/>
                 <xsl:with-param name="cpMark.ids" select="$cpInstructions.second" as="xs:string*" tunnel="yes"/>
@@ -338,6 +343,11 @@
     
     <!-- resolve mRpt that aren't resolved already -->
     <xsl:template match="mei:mRpt[not(parent::mei:abbr)]" mode="resolveRpts">
+        
+        <xsl:if test="@xml:id = 'x8699d781-81b0-4f63-9c85-6a3e942b5bdb'">
+            <xsl:message select="'resolving'"></xsl:message>
+        </xsl:if>
+        
         <choice xmlns="http://www.music-encoding.org/ns/mei" xml:id="c{uuid:randomUUID()}">
             <abbr type="mRpt">
                 <xsl:copy>
@@ -382,9 +392,6 @@
     <!-- disconnect @sameas in mode adjustMaterial -->
     <xsl:template match="@sameas" mode="adjustMaterial"/>
     
-    <!-- disconnect @stayWithMe (temporary attribute) -->
-    <xsl:template match="@stayWithMe" mode="adjustMaterial"/>
-    
     <!-- transpose referenced material if necessary (ie. "in 8va") -->
     <xsl:template match="@oct" mode="adjustMaterial">
         <xsl:param name="oct.dis" as="xs:integer?" tunnel="yes"/>
@@ -393,7 +400,7 @@
     
     <!-- in mode adjustMaterial, layers aren't processed – just their contents -->
     <xsl:template match="mei:layer" mode="adjustMaterial">
-        <xsl:apply-templates select="node()" mode="#current"/>
+        <xsl:apply-templates select="child::node()" mode="#current"/>
     </xsl:template>
     
     <!-- decide if things with a tstamp need to be included or not
@@ -412,11 +419,12 @@
                 <!-- if there are preceding gracenotes (which have no @tstamp) -->
                 <xsl:if test="@stayWithMe">
                     <xsl:variable name="grace.IDs" select="tokenize(@stayWithMe,' ')" as="xs:string+"/>
-                    <xsl:variable name="graces" as="node()+">
+                    <xsl:variable name="graces" as="node()*">
                         <xsl:for-each select="$grace.IDs">
-                            <xsl:sequence select="$music/id(replace(.,'#',''))"/>
+                            <xsl:sequence select="$originalFile//mei:music/id(replace(.,'#',''))"/>
                         </xsl:for-each>
                     </xsl:variable>
+                    
                     <xsl:apply-templates select="$graces" mode="#current"/>
                 </xsl:if>
                 
@@ -595,9 +603,12 @@
         <xsl:param name="cpInstructions" tunnel="yes"/>
         <xsl:param name="cpMarks.enhanced" tunnel="yes"/>
         <xsl:param name="cpMark.ids" as="xs:string*" tunnel="yes"/>
+        <xsl:param name="run" as="xs:integer" tunnel="yes"/>
+        <xsl:param name="material" as="node()" tunnel="yes"/>
         
         <xsl:variable name="staff.id" select="parent::mei:staff/@xml:id"/>
         <xsl:variable name="layer" select="."/>
+        
         <xsl:choose>
             <!-- when only resolving controlEvents, no special action is required -->
             <xsl:when test="$mode = 'controlEvents'">
@@ -669,17 +680,22 @@
                                     </abbr>
                                     <expan evidence="#{$local.cpMarks[$j]/@xml:id}">
                                         
-                                        <!-- sourceLayer scheint nicht zu klappen -->
                                         <xsl:variable name="sourceLayer" as="node()">
                                             <xsl:choose>
                                                 <xsl:when test="$local.cpMarks[$j]/@ref.layer">
-                                                    <xsl:sequence select="$music/id($local.cpInstructions[$j]/@sourceStaff.id)/mei:layer[@n = $local.cpMarks[$j]/@ref.layer]"/>
+                                                    <xsl:sequence select="$material/id($local.cpInstructions[$j]/@sourceStaff.id)/mei:layer[@n = $local.cpMarks[$j]/@ref.layer]"/>
                                                 </xsl:when>
                                                 <xsl:otherwise>
-                                                    <xsl:sequence select="$music/id($local.cpInstructions[$j]/@sourceStaff.id)/mei:layer[1]"/>
+                                                    <xsl:sequence select="$material/id($local.cpInstructions[$j]/@sourceStaff.id)/mei:layer[1]"/>
                                                 </xsl:otherwise>
                                             </xsl:choose>
                                         </xsl:variable>
+                                        
+                                        <xsl:if test="local-name($sourceLayer) != 'layer'">
+                                            <xsl:message select="'in staff ' || $layer/parent::mei:staff || ', layer ' || $layer/@n ||', $sourceLayer is a ' || local-name($sourceLayer)"/>
+                                            <xsl:message select="$sourceLayer"/>
+                                        </xsl:if>
+                                        
                                         <xsl:variable name="oct.dis" as="xs:integer">
                                             <xsl:choose>
                                                 <xsl:when test="$local.cpMarks[$j]/@dis = '8' and $local.cpMarks[$j]/@dis.place = 'above'">1</xsl:when>
@@ -691,7 +707,7 @@
                                                 <xsl:otherwise>0</xsl:otherwise>
                                             </xsl:choose>
                                         </xsl:variable>
-                                        <xsl:apply-templates select="$sourceLayer" mode="adjustMaterial">
+                                        <xsl:apply-templates select="$sourceLayer/mei:*" mode="adjustMaterial">
                                             <xsl:with-param name="oct.dis" select="$oct.dis" as="xs:integer" tunnel="yes"/>
                                             <xsl:with-param name="tstamp.first" select="number($local.cpInstructions[$j]/@source.tstamp.first)" as="xs:double" tunnel="yes"/>
                                             <xsl:with-param name="tstamp.last" select="number($local.cpInstructions[$j]/@source.tstamp.last)" as="xs:double" tunnel="yes"/>
@@ -976,7 +992,7 @@
     </xsl:template>
     
     <!-- remove temporary attribute -->
-    <xsl:template match="@stayWithMe" mode="resolveMarks"/>
+    <xsl:template match="@stayWithMe" mode="cleanup"/>
         
     <!-- mode prepare.cpMarks -->
     <!-- this builds a list of targets that need to be filled -->
