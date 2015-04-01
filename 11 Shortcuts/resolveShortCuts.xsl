@@ -110,11 +110,15 @@
         </xsl:variable>
         
         <xsl:result-document href="{$resultFile.events}">
+          <xsl:processing-instruction name="xml-model">href="../../../../schemata/rng/freidi-schema-musicSource_pmdCoCo.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"</xsl:processing-instruction>
+          <xsl:processing-instruction name="xml-model">href="../../../../schemata/rng/freidi-schema-musicSource_pmdCoCo.rng" type="application/xml" schematypens="http://purl.oclc.org/dsdl/schematron"</xsl:processing-instruction>
             <xsl:apply-templates select="$resolvedAllMarks" mode="cleanup"/>    
         </xsl:result-document>
         
         <!--<xsl:copy-of select="$cpInstructions"/>-->
     </xsl:template>
+  
+    <xsl:template match="processing-instruction('xml-model')" mode="cleanup"/>
     
     <xsl:template match="mei:appInfo" mode="include.cpMarks">
         <xsl:copy>
