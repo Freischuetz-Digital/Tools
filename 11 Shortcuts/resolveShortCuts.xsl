@@ -89,7 +89,7 @@
             <xsl:message terminate="yes" select="'beatRpts should be working, but havent been tested yet. Please check, and if everything works as expected, remove terminate=yes in this xsl!'"/>
         </xsl:if>
         <xsl:if test="$music//mei:halfmRpt">
-            <xsl:message terminate="yes" select="'halfmRpts should be working, but havent been tested yet. Please check, and if everything works as expected, remove terminate=yes in this xsl!'"/>
+            <xsl:message terminate="no" select="'halfmRpts should be working, but havent been tested yet. Please check, and if everything works as expected, remove terminate=yes in this xsl!'"/>
         </xsl:if>
         
         <!-- resolve all cpMarks that point to a staff which contains direct content only -->
@@ -103,6 +103,8 @@
             </xsl:apply-templates>
         </xsl:variable>
         
+        <!--<xsl:message select="'cpMark.ids for first run (' || count($cpInstructions.first) || '): ' || string-join($cpInstructions.first,', ')"/>-->
+        
         <!-- resolve all cpMarks which refer to staves also containing cpMarks -->
         <xsl:variable name="resolvedAllMarks">
             <xsl:apply-templates mode="resolveMarks" select="$resolvedMarks">
@@ -113,6 +115,8 @@
                 <xsl:with-param name="cpMark.ids" select="$cpInstructions.second" as="xs:string*" tunnel="yes"/>
             </xsl:apply-templates>
         </xsl:variable>
+        
+        <!--<xsl:message select="'cpMark.ids for second run (' || count($cpInstructions.second) || '): ' || string-join($cpInstructions.second,', ')"/>-->
         
         <xsl:result-document href="{$resultFile.events}">
           <xsl:processing-instruction name="xml-model">href="../../../../schemata/rng/freidi-schema-musicSource_pmdCoCo.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"</xsl:processing-instruction>
@@ -199,7 +203,7 @@
     <xsl:template match="mei:measure" mode="include.cpMarks">
         <xsl:variable name="measure.id" select="@xml:id"/>
         <xsl:copy>
-            <xsl:attribute name="meter.count" select="(preceding::mei:scoreDef[@meter.count])[1]/@meter.count"/>
+            <xsl:attribute name="meter.count" select="preceding::mei:scoreDef[@meter.count and not(ancestor::mei:supplied)][1]/@meter.count"/>
             <xsl:apply-templates select="node() | @*" mode="#current"/>
             <xsl:apply-templates select="$cpMarks[@freidi.measure = $measure.id]" mode="include.cpMarks"/>
             <!--<xsl:message select="'cpMarks for measure ' || $measure.id || ': ' || count($cpMarks[@freidi.measure = $measure.id])"/>-->
@@ -237,12 +241,25 @@
                 <xsl:variable name="dur" select="1 div number($elem/@dur)"/>
                 <xsl:variable name="dots" select="if($elem/@dots) then(number($elem/@dots)) else(0)"/>
                 <xsl:variable name="totalDur" select="(2 * $dur) - ($dur div math:pow(2,$dots))" as="xs:double"/>
-                <xsl:variable name="count" select="($totalDur div ((1 div 8) div number(substring($elem/@stem.mod,1,1)))) cast as xs:integer" as="xs:integer"/>
+                
+                <xsl:variable name="stem.mod.total" as="xs:integer">
+                    <xsl:choose>
+                        <xsl:when test="not(ancestor::mei:beam)">
+                            <xsl:value-of select="number(substring($elem/@stem.mod,1,1))"/>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:value-of select="number(substring($elem/@stem.mod,1,1)) + 1"/>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:variable>
+                
+                <xsl:variable name="count" select="($totalDur div ((1 div 8) div $stem.mod.total)) cast as xs:integer" as="xs:integer"/>
                 <xsl:variable name="tstamp" select="number(@tstamp)" as="xs:double"/>
                 
                 <xsl:if test="not($elem/@stem.mod)">
                     <xsl:message select="local-name($elem) || '[#' || $elem/@xml:id || '] inside bTrem misses @stem.mod'"/>
                 </xsl:if>
+                
                 <xsl:variable name="measperf" select="number(substring-before($elem/@stem.mod,'slash')) * 8"/>
                 
                 <xsl:variable name="meter.unit" select="(ancestor::mei:measure/preceding::mei:scoreDef[@meter.unit])[1]/@meter.unit cast as xs:integer" as="xs:integer"/>
@@ -250,18 +267,39 @@
                 
                 <!--<xsl:message select="$totalDur || ' dur makes ' || $count || ' found'"></xsl:message>-->
                 
-                <beam>
-                    <xsl:for-each select="(1 to $count)">
-                        <xsl:variable name="i" select="." as="xs:integer"/>
-                        <xsl:variable name="n" select="$i - 1" as="xs:integer"/>
+                <xsl:choose>
+                    <xsl:when test="not(ancestor::mei:beam)">
+                        <beam>
+                            <xsl:for-each select="(1 to $count)">
+                                <xsl:variable name="i" select="." as="xs:integer"/>
+                                <xsl:variable name="n" select="$i - 1" as="xs:integer"/>
+                                
+                                <xsl:apply-templates select="$elem" mode="resolveTrems">
+                                    <xsl:with-param name="dur" select="$measperf"/>
+                                    <xsl:with-param name="tstamp" select="$tstamp + $n * $tstamp.step"/>
+                                </xsl:apply-templates>
+                                
+                            </xsl:for-each>
+                        </beam>
+                    </xsl:when>
+                    <xsl:otherwise>
                         
-                        <xsl:apply-templates select="$elem" mode="resolveTrems">
-                            <xsl:with-param name="dur" select="$measperf"/>
-                            <xsl:with-param name="tstamp" select="$tstamp + $n * $tstamp.step"/>
-                        </xsl:apply-templates>
+                            <xsl:for-each select="(1 to $count)">
+                                <xsl:variable name="i" select="." as="xs:integer"/>
+                                <xsl:variable name="n" select="$i - 1" as="xs:integer"/>
+                                
+                                <xsl:apply-templates select="$elem" mode="resolveTrems">
+                                    <xsl:with-param name="dur" select="$measperf"/>
+                                    <xsl:with-param name="tstamp" select="$tstamp + $n * $tstamp.step"/>
+                                </xsl:apply-templates>
+                                
+                            </xsl:for-each>
                         
-                    </xsl:for-each>
-                </beam>
+                    </xsl:otherwise>
+                </xsl:choose>
+                
+                
+                
                 
             </reg>
         </choice>
@@ -551,8 +589,10 @@
             
             <xsl:when test="$staff//mei:mRpt and starts-with(@tstamp2,'0m+') and @ref.offset = '-1m+1'">
                 <!--This cpMark is just a mRpt and already encoded as such.-->
-                <xsl:if test="not(ends-with(@tstamp2,'m+' || string(number(parent::mei:measure/@meter.count) + 0)))">
-                    <xsl:message>something's wrong here…</xsl:message>
+                <xsl:variable name="endTstamp" select="number(substring-after(@tstamp2,'m+'))" as="xs:double"/>
+                <xsl:variable name="maxMeter" select="number(parent::mei:measure/@meter.count)" as="xs:double"/>
+                <xsl:if test="not($endTstamp ge $maxMeter and $endTstamp le ($maxMeter + 1))">
+                    <xsl:message select="'something seems wrong for cpMark in ' || $staff/@xml:id || ', maxMeter is ' || $maxMeter"/>
                 </xsl:if>
             </xsl:when>
             <!--<xsl:when test="$staff//mei:mSpace and starts-with(@tstamp2,'0m+') and @ref.offset = '-1m+1'">
@@ -677,6 +717,7 @@
                                 
                                 <choice xmlns="http://www.music-encoding.org/ns/mei" xml:id="c{uuid:randomUUID()}">
                                     <abbr type="cpMark" tstamp="{$local.cpInstructions[$j]/@target.tstamp.first}" tstamp2="0m+{$local.cpInstructions[$j]/@target.tstamp.last}">
+                                        
                                         <xsl:apply-templates select="$layer/node()" mode="#current">
                                             <xsl:with-param name="tstamp.first" select="number($local.cpInstructions[$j]/@target.tstamp.first)" as="xs:double" tunnel="yes"/>
                                             <xsl:with-param name="tstamp.last" select="number($local.cpInstructions[$j]/@target.tstamp.last)" as="xs:double" tunnel="yes"/>
@@ -711,12 +752,13 @@
                                                 <xsl:otherwise>0</xsl:otherwise>
                                             </xsl:choose>
                                         </xsl:variable>
+                                        
                                         <xsl:apply-templates select="$sourceLayer/mei:*" mode="adjustMaterial">
                                             <xsl:with-param name="oct.dis" select="$oct.dis" as="xs:integer" tunnel="yes"/>
                                             <xsl:with-param name="tstamp.first" select="number($local.cpInstructions[$j]/@source.tstamp.first)" as="xs:double" tunnel="yes"/>
                                             <xsl:with-param name="tstamp.last" select="number($local.cpInstructions[$j]/@source.tstamp.last)" as="xs:double" tunnel="yes"/>
                                             <!-- if material from tstamp=1 is copied into tstamp=3, value of tstamp.offset would be "-2" -->
-                                            <xsl:with-param name="tstamp.offset" select="number($local.cpInstructions[$j]/@source.tstamp.last) - number($local.cpInstructions[$j]/@target.tstamp.last)" as="xs:double" tunnel="yes"/>
+                                            <xsl:with-param name="tstamp.offset" select="number($local.cpInstructions[$j]/@target.tstamp.last) - number($local.cpInstructions[$j]/@source.tstamp.last)" as="xs:double" tunnel="yes"/>                                           
                                         </xsl:apply-templates>
                                     </expan>
                                 </choice>
@@ -734,7 +776,7 @@
                 </xsl:choose>
                 
                 <!-- check for cpMarks that require to create a whole new layer for this staff -->
-                <xsl:variable name="other.cpMarks" select="$cpMarks.enhanced/descendant-or-self::*[@xml:id = $probable.cpInstructions/@cpMark.id 
+                <!--<xsl:variable name="other.cpMarks" select="$cpMarks.enhanced/descendant-or-self::*[@xml:id = $probable.cpInstructions/@cpMark.id 
                     and @xml:id = $cpMark.ids 
                     and @layer
                     and @layer != $layer/@n]"/>
@@ -744,7 +786,7 @@
                         <xsl:sort select="@target.tstamp.first" data-type="number"/>
                         <xsl:sort select="@target.tstamp.last" data-type="number"/>
                     </xsl:perform-sort>
-                </xsl:variable>
+                </xsl:variable>-->
                 
                 <!-- todo: check the following comment -->
                 <!--<xsl:if test="count($other.cpInstructions) ge 1 or count($other.cpMarks) ge 1">
@@ -818,6 +860,18 @@
 
         </xsl:choose>
     </xsl:template>
+    
+    <xsl:template match="mei:choice" mode="cleanup">
+        
+        <xsl:choose>
+            <xsl:when test="ancestor::mei:choice">
+                <xsl:apply-templates select="./mei:reg/child::mei:* | ./mei:expan/child::mei:* | ./mei:corr/child::mei:*" mode="adjustMaterial"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:next-match/>
+            </xsl:otherwise>
+        </xsl:choose>
+    </xsl:template>
         
     <xsl:template match="mei:measure" mode="resolveMarks">
         <xsl:param name="cpInstructions" tunnel="yes"/>
@@ -827,7 +881,7 @@
         <xsl:variable name="target.measure" select="."/>
         
         <xsl:copy>
-            <xsl:apply-templates select="node() | (@* except @meter.count)" mode="#current"/>
+            <xsl:apply-templates select="node() | @*" mode="#current"/>
             
             <xsl:variable name="affectedStaves" select="child::mei:staff[@xml:id = $cpInstructions//@targetStaff.id]"/>    
             
@@ -1141,6 +1195,7 @@
     <xsl:template match="mei:expan/@evidence" mode="cleanup">
         <xsl:attribute name="evidence" select="replace(.,'#','')"/>
     </xsl:template>
+    <xsl:template match="mei:measure/@meter.count" mode="cleanup"/>
     
     <xsl:template match="node() | @*" mode="#all">
         <xsl:copy>
