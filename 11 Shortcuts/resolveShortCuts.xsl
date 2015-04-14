@@ -238,9 +238,13 @@
             </orig>
             <reg>
                 <xsl:variable name="elem" select="child::mei:*" as="node()"/>
-                <xsl:variable name="dur" select="1 div number($elem/@dur)"/>
-                <xsl:variable name="dots" select="if($elem/@dots) then(number($elem/@dots)) else(0)"/>
+                <xsl:variable name="dur" select="1 div number($elem/@dur)" as="xs:double"/>
+                <xsl:variable name="dots" select="if($elem/@dots) then(number($elem/@dots)) else(0)" as="xs:double"/>
                 <xsl:variable name="totalDur" select="(2 * $dur) - ($dur div math:pow(2,$dots))" as="xs:double"/>
+                
+                <xsl:if test="not($elem/@stem.mod)">
+                    <xsl:message terminate="yes" select="'problem: child of bTrem ' || @xml:id || ' has no @stem.mod. '"/>
+                </xsl:if>
                 
                 <xsl:variable name="stem.mod.total" as="xs:integer">
                     <xsl:choose>
@@ -253,14 +257,19 @@
                     </xsl:choose>
                 </xsl:variable>
                 
+                <xsl:if test="not(number(($totalDur div ((1 div 8) div $stem.mod.total))) = ($totalDur div ((1 div 8) div $stem.mod.total)))">
+                    <xsl:message select="'problem located at ' || @xml:id"/>
+                </xsl:if>
+                
                 <xsl:variable name="count" select="($totalDur div ((1 div 8) div $stem.mod.total)) cast as xs:integer" as="xs:integer"/>
+                <!--<xsl:variable name="count" select="4" as="xs:integer"/>-->
                 <xsl:variable name="tstamp" select="number(@tstamp)" as="xs:double"/>
                 
                 <xsl:if test="not($elem/@stem.mod)">
                     <xsl:message select="local-name($elem) || '[#' || $elem/@xml:id || '] inside bTrem misses @stem.mod'"/>
                 </xsl:if>
                 
-                <xsl:variable name="measperf" select="number(substring-before($elem/@stem.mod,'slash')) * 8"/>
+                <xsl:variable name="measperf" select="number(substring-before($elem/@stem.mod,'slash')) * 8" as="xs:double"/>
                 
                 <xsl:variable name="meter.unit" select="(ancestor::mei:measure/preceding::mei:scoreDef[@meter.unit])[1]/@meter.unit cast as xs:integer" as="xs:integer"/>
                 <xsl:variable name="tstamp.step" select="$meter.unit div number($measperf)" as="xs:double"/>
