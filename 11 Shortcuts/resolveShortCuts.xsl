@@ -873,8 +873,11 @@
     <xsl:template match="mei:choice" mode="cleanup">
         
         <xsl:choose>
-            <xsl:when test="ancestor::mei:choice">
+            <xsl:when test="self::node()/ancestor::mei:choice and ancestor::mei:expan">
                 <xsl:apply-templates select="./mei:reg/child::mei:* | ./mei:expan/child::mei:* | ./mei:corr/child::mei:*" mode="adjustMaterial"/>
+            </xsl:when>
+            <xsl:when test="self::node()/ancestor::mei:choice and ancestor::mei:abbr">
+                <xsl:apply-templates select="./mei:abbr/child::mei:*" mode="#current"/>
             </xsl:when>
             <xsl:otherwise>
                 <xsl:next-match/>
