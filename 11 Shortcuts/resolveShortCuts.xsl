@@ -780,12 +780,72 @@
                             
                         </xsl:copy>
                         
+                        <xsl:for-each select="$local.cpMarks">
+                            <xsl:variable name="pos" select="position()" as="xs:integer"/>
+                            <xsl:variable name="current.cpMark" select="." as="node()"/>
+                            <xsl:variable name="current.cpInstruction" select="$local.cpInstructions[$pos]" as="node()"/>
+                            <xsl:if test="not($current.cpMark/@layer) and count($material/id($current.cpInstruction/@sourceStaff.id)/mei:layer) gt 1 and not($layer/following-sibling::mei:layer)">
+                                
+                                <xsl:if test="count($local.cpMarks) gt 1">
+                                    <xsl:message select="'there may be problems in the encoding of ' || $staff.id || ' with regard to a second generated layer. Please check!'"/>
+                                </xsl:if>
+                                
+                                <xsl:for-each select="2 to (count($material/id($current.cpInstruction/@sourceStaff.id)/mei:layer))">
+                                    <xsl:variable name="iteration" select="." as="xs:integer"/>
+                                    
+                                    <layer n="{$iteration}" xmlns="http://www.music-encoding.org/ns/mei" xml:id="l{uuid:randomUUID()}">
+                                        <choice xml:id="x{uuid:randomUUID()}">
+                                            <abbr type="cpMark" xml:id="g{uuid:randomUUID()}">
+                                                <mSpace xml:id="m{uuid:randomUUID()}" tstamp="1"/>
+                                            </abbr>
+                                            <expan evidence="#{$current.cpMark/@xml:id}">
+                                                
+                                                <xsl:variable name="sourceLayer" select="$material/id($current.cpInstruction/@sourceStaff.id)/mei:layer[$iteration]" as="node()"/>
+                                                
+                                                
+                                                <xsl:if test="local-name($sourceLayer) != 'layer'">
+                                                    <xsl:message select="'in staff ' || $staff.id || ', layer ' || $iteration ||', $sourceLayer is a ' || local-name($sourceLayer)"/>
+                                                    <xsl:message select="$sourceLayer"/>
+                                                </xsl:if>
+                                                
+                                                <xsl:variable name="oct.dis" as="xs:integer">
+                                                    <xsl:choose>
+                                                        <xsl:when test="$current.cpMark/@dis = '8' and $current.cpMark/@dis.place = 'above'">1</xsl:when>
+                                                        <xsl:when test="$current.cpMark/@dis = '15' and $current.cpMark/@dis.place = 'above'">2</xsl:when>
+                                                        <xsl:when test="$current.cpMark/@dis = '22' and $current.cpMark/@dis.place = 'above'">3</xsl:when>
+                                                        <xsl:when test="$current.cpMark/@dis = '8' and $current.cpMark/@dis.place = 'below'">-1</xsl:when>
+                                                        <xsl:when test="$current.cpMark/@dis = '15' and $current.cpMark/@dis.place = 'below'">-2</xsl:when>
+                                                        <xsl:when test="$current.cpMark/@dis = '22' and $current.cpMark/@dis.place = 'below'">-3</xsl:when>
+                                                        <xsl:otherwise>0</xsl:otherwise>
+                                                    </xsl:choose>
+                                                </xsl:variable>
+                                                
+                                                <xsl:apply-templates select="$sourceLayer/mei:*" mode="adjustMaterial">
+                                                    <xsl:with-param name="oct.dis" select="$oct.dis" as="xs:integer" tunnel="yes"/>
+                                                    <xsl:with-param name="tstamp.first" select="number($current.cpInstruction/@source.tstamp.first)" as="xs:double" tunnel="yes"/>
+                                                    <xsl:with-param name="tstamp.last" select="number($current.cpInstruction/@source.tstamp.last)" as="xs:double" tunnel="yes"/>
+                                                    <!-- if material from tstamp=1 is copied into tstamp=3, value of tstamp.offset would be "-2" -->
+                                                    <xsl:with-param name="tstamp.offset" select="number($current.cpInstruction/@target.tstamp.last) - number($current.cpInstruction/@source.tstamp.last)" as="xs:double" tunnel="yes"/>                                           
+                                                </xsl:apply-templates>
+                                            </expan>
+                                        </choice>
+                                    </layer>
+                                    
+                                </xsl:for-each>
+                                
+                                
+                                
+                            </xsl:if>
+                        </xsl:for-each>
+                        
                     </xsl:otherwise>
                     
                 </xsl:choose>
                 
+                
+                
                 <!-- check for cpMarks that require to create a whole new layer for this staff -->
-                <!--<xsl:variable name="other.cpMarks" select="$cpMarks.enhanced/descendant-or-self::*[@xml:id = $probable.cpInstructions/@cpMark.id 
+                <xsl:variable name="other.cpMarks" select="$cpMarks.enhanced/descendant-or-self::*[@xml:id = $probable.cpInstructions/@cpMark.id 
                     and @xml:id = $cpMark.ids 
                     and @layer
                     and @layer != $layer/@n]"/>
@@ -795,7 +855,15 @@
                         <xsl:sort select="@target.tstamp.first" data-type="number"/>
                         <xsl:sort select="@target.tstamp.last" data-type="number"/>
                     </xsl:perform-sort>
-                </xsl:variable>-->
+                </xsl:variable>
+                
+                <xsl:if test="count($other.cpMarks) gt 0 or count($other.cpInstructions) gt 0">
+                    <xsl:message select="$staff.id || ': $other.cpMarks: ' || count($other.cpMarks) || ', $other.cpInstructions: ' || count($other.cpInstructions)"/>    
+                </xsl:if>
+                
+                
+                
+                
                 
                 <!-- todo: check the following comment -->
                 <!--<xsl:if test="count($other.cpInstructions) ge 1 or count($other.cpMarks) ge 1">
@@ -1208,6 +1276,12 @@
         <xsl:attribute name="evidence" select="replace(.,'#','')"/>
     </xsl:template>
     <xsl:template match="mei:measure/@meter.count" mode="cleanup"/>
+    <xsl:template match="mei:layer[not(@n) and following-sibling::mei:layer/@n = '2']" mode="cleanup">
+        <xsl:copy>
+            <xsl:attribute name="n" select="1"/>
+            <xsl:apply-templates select="node() | @*" mode="#current"/>
+        </xsl:copy>
+    </xsl:template>
     
     <xsl:template match="node() | @*" mode="#all">
         <xsl:copy>
