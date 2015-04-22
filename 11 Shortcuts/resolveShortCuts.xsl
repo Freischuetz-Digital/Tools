@@ -58,9 +58,21 @@
         
         <xsl:variable name="cpMarks.enhanced" select="$resolvedRpts//mei:cpMark"/>
         
-        <xsl:variable name="cpInstructions.all" select="distinct-values($cpInstructions//copy[not(@sourceStaff.id = $cpInstructions//copy/@targetStaff.id)]/@cpMark.id)"/>
+        <!--<xsl:variable name="cpInstructions.all" select="distinct-values($cpInstructions//copy[not(@sourceStaff.id = $cpInstructions//copy/@targetStaff.id)]/@cpMark.id)"/>
         <xsl:variable name="cpInstructions.second" select="distinct-values($cpInstructions//copy[@sourceStaff.id = $cpInstructions//copy/@targetStaff.id]/@cpMark.id)"/>
-        <xsl:variable name="cpInstructions.first" select="$cpInstructions.all[not(. = $cpInstructions.second)]"/>
+        <xsl:variable name="cpInstructions.first" select="$cpInstructions.all[not(. = $cpInstructions.second)]"/>-->
+        
+        <xsl:variable name="cpInstructions.all" select="distinct-values($cpInstructions//copy/@cpMark.id)"/>
+        <xsl:variable name="cpInstructions.second" select="distinct-values($cpInstructions//copy[@sourceStaff.id = $cpInstructions//copy/@targetStaff.id and not(@sourceStaff.id = @targetStaff.id)]/@cpMark.id)"/>
+        <xsl:variable name="cpInstructions.first" select="distinct-values($cpInstructions.all[not(. = $cpInstructions.second)])"/>
+        
+        <!--<xsl:message select="'cpMarks.enhanced: ' || count($cpMarks.enhanced)"/>
+        <xsl:message select="'cpInstructions total: ' || count(distinct-values($cpInstructions//copy/@cpMark.id))"/>
+        <xsl:message select="string-join(for $i in $cpInstructions.second return $cpMarks.enhanced[@xml:id = $i]/concat(@freidi.measure,'_s',@staff),', ')"></xsl:message>        
+        <xsl:message select="'cpInstructions.all: ' || count($cpInstructions.all)"/>
+        <xsl:message select="'cpInstructions.second: ' || count($cpInstructions.second)"/>
+        <xsl:message select="'cpInstructions.first: ' || count($cpInstructions.first)"/>-->
+        
         
         <!-- Test if everything is correct about the workflow -->
         <xsl:if test="not($mode = ('events','controlEvents','full'))">
@@ -235,7 +247,7 @@
         
     </xsl:template>
     
-    <xsl:template match="@freidi.measure" mode="include.cpMarks"/>
+    <xsl:template match="@freidi.measure" mode="cleanup"/>
     
     <!-- resolving bTrems that aren't resolved already -->
     <xsl:template match="mei:bTrem[not(parent::mei:orig)]" mode="resolveTrems">
@@ -1170,8 +1182,9 @@
         <xsl:choose>
             
             <!--<xsl:when test="@tstamp2 = ('0m+' || $origin.measure.meter.count) and @ref.offset = '-1m+1' and not(@ref.staff) and ($origin.staff//mei:mRpt or $origin.staff//mei:mSpace)">-->
-            <xsl:when test="@tstamp2 = ('0m+' || max($origin.staff//@tstamp/number(.))) and @ref.offset = '-1m+1' and not(@ref.staff) and ($origin.staff//mei:mRpt)">
+            <xsl:when test="@tstamp = '1' and (@tstamp2 = ('0m+' || max($origin.staff//@tstamp/number(.))) or @tstamp2 = ('0m+' || number($origin.measure.meter.count))) and @ref.offset = '-1m+1' and not(@ref.staff) and ($origin.staff//mei:mRpt or $origin.staff//mei:mSpace)">
                 <!-- this is a mRpt and already covered as such -->
+                <!--<xsl:message select="'cpMark equals mRpt: ' || @freidi.measure || '_' || $staff.n"/>-->
             </xsl:when>
             <!--<xsl:when test="@tstamp2 = ('0m+' || $origin.measure.meter.count) and @ref.offset = '-1m+1' and not(@ref.staff) and $origin.staff//mei:mSpace">
                 <!-\- this is an mSpace serving as mRpt and already covered as such -\->
@@ -1196,7 +1209,7 @@
                             <xsl:sequence select="$origin.measure/following::mei:measure[$offset.dist]"/>
                         </xsl:when>
                         <xsl:otherwise>
-                            <xsl:message>Houston…</xsl:message>
+                            <xsl:message terminate="yes">Houston…</xsl:message>
                         </xsl:otherwise>
                     </xsl:choose>
                 </xsl:variable>
