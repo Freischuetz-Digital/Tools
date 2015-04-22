@@ -46,20 +46,21 @@
         </xsl:variable>
         <xsl:variable name="resolvedTrems">
             <xsl:apply-templates select="$included.cpMarks" mode="resolveTrems"/>
+            <xsl:message select="'resolved tremolos'"/>
         </xsl:variable>
         <xsl:variable name="resolvedRpts">
             <xsl:apply-templates mode="resolveRpts" select="$resolvedTrems"/>
+            <xsl:message select="'resolved repeats'"/>
         </xsl:variable>
         <xsl:variable name="cpInstructions">
             <xsl:apply-templates select="$resolvedRpts//mei:cpMark" mode="prepare.cpMarks"/>
         </xsl:variable>
+        
         <xsl:variable name="cpMarks.enhanced" select="$resolvedRpts//mei:cpMark"/>
         
         <xsl:variable name="cpInstructions.all" select="distinct-values($cpInstructions//copy[not(@sourceStaff.id = $cpInstructions//copy/@targetStaff.id)]/@cpMark.id)"/>
         <xsl:variable name="cpInstructions.second" select="distinct-values($cpInstructions//copy[@sourceStaff.id = $cpInstructions//copy/@targetStaff.id]/@cpMark.id)"/>
         <xsl:variable name="cpInstructions.first" select="$cpInstructions.all[not(. = $cpInstructions.second)]"/>
-        
-        <xsl:message select="'total: ' || count($cpMarks.enhanced) || ', first: ' || count($cpInstructions.first) || ', second: ' || count($cpInstructions.second)"></xsl:message>
         
         <!-- Test if everything is correct about the workflow -->
         <xsl:if test="not($mode = ('events','controlEvents','full'))">
@@ -92,7 +93,10 @@
             <xsl:message terminate="no" select="'halfmRpts should be working, but havent been tested yet. Please check, and if everything works as expected, remove terminate=yes in this xsl!'"/>
         </xsl:if>
         
+        <xsl:message select="'total cpMarks: ' || count($cpMarks.enhanced) || ', first run: ' || count($cpInstructions.first) || ', second run: ' || count($cpInstructions.second)"/>
+        
         <!-- resolve all cpMarks that point to a staff which contains direct content only -->
+        
         <xsl:variable name="resolvedMarks">
             <xsl:apply-templates mode="resolveMarks" select="$resolvedRpts">
                 <xsl:with-param name="run" select="1" as="xs:integer" tunnel="yes"/>
@@ -101,11 +105,14 @@
                 <xsl:with-param name="cpMarks.enhanced" select="$cpMarks.enhanced" tunnel="yes"/>
                 <xsl:with-param name="cpMark.ids" select="$cpInstructions.first" as="xs:string*" tunnel="yes"/>
             </xsl:apply-templates>
+            <xsl:message select="'resolved first round of cpMarks'"/>
+            
         </xsl:variable>
         
         <!--<xsl:message select="'cpMark.ids for first run (' || count($cpInstructions.first) || '): ' || string-join($cpInstructions.first,', ')"/>-->
         
         <!-- resolve all cpMarks which refer to staves also containing cpMarks -->
+        
         <xsl:variable name="resolvedAllMarks">
             <xsl:apply-templates mode="resolveMarks" select="$resolvedMarks">
                 <xsl:with-param name="run" select="2" as="xs:integer" tunnel="yes"/>
@@ -114,6 +121,7 @@
                 <xsl:with-param name="cpMarks.enhanced" select="$cpMarks.enhanced" tunnel="yes"/>
                 <xsl:with-param name="cpMark.ids" select="$cpInstructions.second" as="xs:string*" tunnel="yes"/>
             </xsl:apply-templates>
+            <xsl:message select="'resolved second round of cpMarks'"/>
         </xsl:variable>
         
         <!--<xsl:message select="'cpMark.ids for second run (' || count($cpInstructions.second) || '): ' || string-join($cpInstructions.second,', ')"/>-->
@@ -121,7 +129,8 @@
         <xsl:result-document href="{$resultFile.events}">
           <xsl:processing-instruction name="xml-model">href="../../../../schemata/rng/freidi-schema-musicSource_pmdCoCo.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"</xsl:processing-instruction>
           <xsl:processing-instruction name="xml-model">href="../../../../schemata/rng/freidi-schema-musicSource_pmdCoCo.rng" type="application/xml" schematypens="http://purl.oclc.org/dsdl/schematron"</xsl:processing-instruction>
-            <xsl:apply-templates select="$resolvedAllMarks" mode="cleanup"/>    
+            <xsl:apply-templates select="$resolvedAllMarks" mode="cleanup"/>  
+            <xsl:message select="'cleaned file and saving'"/>
         </xsl:result-document>
         
         <!--<xsl:copy-of select="$cpInstructions"/>-->
@@ -269,9 +278,9 @@
                     <xsl:message select="local-name($elem) || '[#' || $elem/@xml:id || '] inside bTrem misses @stem.mod'"/>
                 </xsl:if>
                 
-                <xsl:variable name="measperf" select="number(substring-before($elem/@stem.mod,'slash')) * 8" as="xs:double"/>
+                <xsl:variable name="measperf" select="$stem.mod.total * 8" as="xs:double"/>
                 
-                <xsl:variable name="meter.unit" select="(ancestor::mei:measure/preceding::mei:scoreDef[@meter.unit])[1]/@meter.unit cast as xs:integer" as="xs:integer"/>
+                <xsl:variable name="meter.unit" select="ancestor::mei:measure/preceding::mei:scoreDef[@meter.unit][1]/@meter.unit cast as xs:integer" as="xs:integer"/>
                 <xsl:variable name="tstamp.step" select="$meter.unit div number($measperf)" as="xs:double"/>
                 
                 <!--<xsl:message select="$totalDur || ' dur makes ' || $count || ' found'"></xsl:message>-->
@@ -673,7 +682,6 @@
             </xsl:when>
             <!-- there must be an instruction to copy in music, so resolve it -->
             <xsl:otherwise>
-                
                 <xsl:variable name="probable.cpInstructions" select="$cpInstructions/descendant-or-self::*[@targetStaff.id = $staff.id]"/>
                 <xsl:variable name="local.cpMarks" select="$cpMarks.enhanced/descendant-or-self::*[@xml:id = $probable.cpInstructions/@cpMark.id 
                     and @xml:id = $cpMark.ids 
@@ -708,6 +716,11 @@
                     
                     <!-- deal with all the cpMarks for this layer -->
                     <xsl:otherwise>
+                        
+                        <xsl:if test="ancestor::mei:staff/@xml:id = 'A_mov8_measure169_s1' and @n = '1'">
+                            <xsl:message select="'processing 169s1 in run ' || $run"/>
+                        </xsl:if>
+                        
                         <xsl:copy>
                             <xsl:apply-templates select="@*" mode="#current"/>
                             
@@ -761,6 +774,11 @@
                                                 <xsl:otherwise>0</xsl:otherwise>
                                             </xsl:choose>
                                         </xsl:variable>
+                                        
+                                        <xsl:if test="$layer/ancestor::mei:staff/@xml:id = 'A_mov8_measure171_s1' and $layer/@n = '1'">
+                                            <xsl:message select="'sourceLayer: ' || $sourceLayer/parent::mei:staff/@xml:id"/>
+                                            <xsl:message select="string-join($sourceLayer/mei:*/local-name(),', ')"/>
+                                        </xsl:if>
                                         
                                         <xsl:apply-templates select="$sourceLayer/mei:*" mode="adjustMaterial">
                                             <xsl:with-param name="oct.dis" select="$oct.dis" as="xs:integer" tunnel="yes"/>
@@ -941,6 +959,15 @@
     <xsl:template match="mei:choice" mode="cleanup">
         
         <xsl:choose>
+            <xsl:when test="not(ancestor::mei:choice)">
+                <xsl:next-match/>
+            </xsl:when>
+            <xsl:when test="ancestor::mei:expan">
+                <xsl:apply-templates select="mei:expan/child::mei:* | mei:reg/child::mei:* | mei:corr/child::mei:*" mode="adjustMaterial"/>
+            </xsl:when>
+        </xsl:choose>
+        
+        <!--<xsl:choose>
             <xsl:when test="self::node()/ancestor::mei:choice and ancestor::mei:expan">
                 <xsl:apply-templates select="./mei:reg/child::mei:* | ./mei:expan/child::mei:* | ./mei:corr/child::mei:*" mode="adjustMaterial"/>
             </xsl:when>
@@ -950,7 +977,7 @@
             <xsl:otherwise>
                 <xsl:next-match/>
             </xsl:otherwise>
-        </xsl:choose>
+        </xsl:choose>-->
     </xsl:template>
         
     <xsl:template match="mei:measure" mode="resolveMarks">
@@ -1143,7 +1170,7 @@
         <xsl:choose>
             
             <!--<xsl:when test="@tstamp2 = ('0m+' || $origin.measure.meter.count) and @ref.offset = '-1m+1' and not(@ref.staff) and ($origin.staff//mei:mRpt or $origin.staff//mei:mSpace)">-->
-            <xsl:when test="@tstamp2 = ('0m+' || $origin.measure.meter.count) and @ref.offset = '-1m+1' and not(@ref.staff) and ($origin.staff//mei:mRpt)">
+            <xsl:when test="@tstamp2 = ('0m+' || max($origin.staff//@tstamp/number(.))) and @ref.offset = '-1m+1' and not(@ref.staff) and ($origin.staff//mei:mRpt)">
                 <!-- this is a mRpt and already covered as such -->
             </xsl:when>
             <!--<xsl:when test="@tstamp2 = ('0m+' || $origin.measure.meter.count) and @ref.offset = '-1m+1' and not(@ref.staff) and $origin.staff//mei:mSpace">
