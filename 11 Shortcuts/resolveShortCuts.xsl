@@ -15,7 +15,6 @@
             <xd:p>
                 TODO: 
                 * beatRpt
-                * halfmRpt
                 (* mRpt2)
                 (* multiRpt)
                 * mSpaces as mRpt
@@ -63,12 +62,12 @@
         <xsl:variable name="cpInstructions.first" select="$cpInstructions.all[not(. = $cpInstructions.second)]"/>-->
         
         <xsl:variable name="cpInstructions.all" select="distinct-values($cpInstructions//copy/@cpMark.id)"/>
-        <xsl:variable name="cpInstructions.second" select="distinct-values($cpInstructions//copy[@sourceStaff.id = $cpInstructions//copy/@targetStaff.id and not(@sourceStaff.id = @targetStaff.id)]/@cpMark.id)"/>
+        <xsl:variable name="cpInstructions.second" select="distinct-values($cpInstructions//copy[@sourceStaff.id = distinct-values((preceding-sibling::copy/@targetStaff.id,following-sibling::copy/@targetStaff.id))]/@cpMark.id)" as="xs:string*"/>
         <xsl:variable name="cpInstructions.first" select="distinct-values($cpInstructions.all[not(. = $cpInstructions.second)])"/>
         
         <!--<xsl:message select="'cpMarks.enhanced: ' || count($cpMarks.enhanced)"/>
-        <xsl:message select="'cpInstructions total: ' || count(distinct-values($cpInstructions//copy/@cpMark.id))"/>
-        <xsl:message select="string-join(for $i in $cpInstructions.second return $cpMarks.enhanced[@xml:id = $i]/concat(@freidi.measure,'_s',@staff),', ')"></xsl:message>        
+        <xsl:message select="$cpInstructions.second"/>
+        <xsl:message select="'staves: ' || string-join(for $i in $cpInstructions.second return $cpMarks.enhanced[@xml:id = $i]/concat(@freidi.measure,'_s',@staff,', (',@tstamp2,')'),', ')"></xsl:message>        
         <xsl:message select="'cpInstructions.all: ' || count($cpInstructions.all)"/>
         <xsl:message select="'cpInstructions.second: ' || count($cpInstructions.second)"/>
         <xsl:message select="'cpInstructions.first: ' || count($cpInstructions.first)"/>-->
@@ -100,9 +99,6 @@
         </xsl:if>
         <xsl:if test="$music//mei:beatRpt">
             <xsl:message terminate="yes" select="'beatRpts should be working, but havent been tested yet. Please check, and if everything works as expected, remove terminate=yes in this xsl!'"/>
-        </xsl:if>
-        <xsl:if test="$music//mei:halfmRpt">
-            <xsl:message terminate="no" select="'halfmRpts should be working, but havent been tested yet. Please check, and if everything works as expected, remove terminate=yes in this xsl!'"/>
         </xsl:if>
         
         <xsl:message select="'total cpMarks: ' || count($cpMarks.enhanced) || ', first run: ' || count($cpInstructions.first) || ', second run: ' || count($cpInstructions.second)"/>
@@ -729,10 +725,6 @@
                     <!-- deal with all the cpMarks for this layer -->
                     <xsl:otherwise>
                         
-                        <xsl:if test="ancestor::mei:staff/@xml:id = 'A_mov8_measure169_s1' and @n = '1'">
-                            <xsl:message select="'processing 169s1 in run ' || $run"/>
-                        </xsl:if>
-                        
                         <xsl:copy>
                             <xsl:apply-templates select="@*" mode="#current"/>
                             
@@ -786,11 +778,6 @@
                                                 <xsl:otherwise>0</xsl:otherwise>
                                             </xsl:choose>
                                         </xsl:variable>
-                                        
-                                        <xsl:if test="$layer/ancestor::mei:staff/@xml:id = 'A_mov8_measure171_s1' and $layer/@n = '1'">
-                                            <xsl:message select="'sourceLayer: ' || $sourceLayer/parent::mei:staff/@xml:id"/>
-                                            <xsl:message select="string-join($sourceLayer/mei:*/local-name(),', ')"/>
-                                        </xsl:if>
                                         
                                         <xsl:apply-templates select="$sourceLayer/mei:*" mode="adjustMaterial">
                                             <xsl:with-param name="oct.dis" select="$oct.dis" as="xs:integer" tunnel="yes"/>
