@@ -567,9 +567,9 @@
             <xsl:message terminate="yes" select="'You seem to use a file from the wrong folder. Relevant chunk of filePath is: ' || reverse(tokenize(document-uri(/),'/'))[3]"/>
         </xsl:if>-->
         
-        <xsl:if test="$sourceThereAlready">
-            <xsl:message terminate="yes" select="'There is already a processed version of the file in /13 reCored…'"/>
-        </xsl:if>
+        <!--<xsl:if test="$sourceThereAlready">
+            <xsl:message terminate="yes" select="'There is already a processed version of the file in /14 reCored…'"/>
+        </xsl:if>-->
         
         <xsl:if test="not($coreThereAlready)">
             <xsl:message terminate="yes" select="'There is no core file for mov' || $mov.n || ' yet. Please use setupNewCore.xsl first. ' || concat($basePath,'/14%20reCored/core_mov',$mov.n,'.xml')"/>
@@ -611,18 +611,28 @@
             <xsl:apply-templates mode="coreDraft"/>
         </xsl:variable>-->
         
-        <!-- source file -->
-        <xsl:result-document href="{concat($basePath,'/14%20reCored/',$source.id,'/',$mov.id,'.xml')}">
-            <xsl:apply-templates mode="source.cleanup">
-                <xsl:with-param name="diff.groups" select="$diff.groups" tunnel="yes"/>
-                <xsl:with-param name="core.draft" select="$newCore" tunnel="yes"/>
-            </xsl:apply-templates>
-        </xsl:result-document>
+        <xsl:choose>
+            <xsl:when test="$mode = 'probe'">
+                
+            </xsl:when>
+            <xsl:otherwise>
+                <!-- source file -->
+                <xsl:result-document href="{concat($basePath,'/14%20reCored/',$source.id,'/',$mov.id,'.xml')}">
+                    <xsl:apply-templates mode="source.cleanup">
+                        <xsl:with-param name="diff.groups" select="$diff.groups" tunnel="yes"/>
+                        <xsl:with-param name="core.draft" select="$newCore" tunnel="yes"/>
+                    </xsl:apply-templates>
+                </xsl:result-document>
+                
+                <!-- core file -->
+                <xsl:result-document href="{concat($basePath,'/14%20reCored/_core_mov',$mov.n,'.xml')}">
+                    <xsl:apply-templates select="$newCore" mode="core.cleanup"/>
+                </xsl:result-document>
+            </xsl:otherwise>
+        </xsl:choose>
         
-        <!-- core file -->
-        <xsl:result-document href="{concat($basePath,'/14%20reCored/_core_mov',$mov.n,'.xml')}">
-            <xsl:apply-templates select="$newCore" mode="core.cleanup"/>
-        </xsl:result-document>
+        
+        
         
     </xsl:template>
     
@@ -1099,12 +1109,12 @@
                             <layer xmlns="http://www.music-encoding.org/ns/mei">
                                 <xsl:apply-templates select="child::mei:layer/@*" mode="#current"/>
                                 
-                                <!-- deal with the content that precedes the first variant section -->
+                                <!--<!-\- deal with the content that precedes the first variant section -\->
                                 <xsl:apply-templates select="child::mei:layer/node()" mode="get.by.tstamps">
                                     <xsl:with-param name="before.tstamp" select="number($local.diff.groups[1]/@tstamp.first)" as="xs:double" tunnel="yes"/>
                                 </xsl:apply-templates>     
                                 
-                                <!-- deal with each variant section and the content that follows it, but precedes the next variant section -->
+                                <!-\- deal with each variant section and the content that follows it, but precedes the next variant section -\->
                                 <xsl:for-each select="$local.diff.groups">
                                     <xsl:variable name="current.diff.group" select="." as="node()"/>
                                     <xsl:variable name="pos" select="position()" as="xs:integer"/>
@@ -1114,29 +1124,37 @@
                                         <xsl:message select="$current.diff.group"/>
                                     </xsl:if>
                                     
-                                    <!-- address the variant section -->
+                                    <!-\- address the variant section -\->
                                     <xsl:apply-templates select="$core.staff/child::mei:layer/node()" mode="get.by.tstamps">
                                         <xsl:with-param name="local.diff.groups" select="$current.diff.group" as="node()" tunnel="yes"/>
                                         <xsl:with-param name="source.staff" select="$source.staff" as="node()" tunnel="yes"/>
                                     </xsl:apply-templates>   
                                     
-                                    <!-- deal with the material following the variant section -->
+                                    <!-\- deal with the material following the variant section -\->
                                     <xsl:choose>
-                                        <!-- when there are following variant sections left -->
+                                        <!-\- when there are following variant sections left -\->
                                         <xsl:when test="$pos lt count($local.diff.groups)">
                                             <xsl:apply-templates select="$core.staff/child::mei:layer/node()" mode="get.by.tstamps">
                                                 <xsl:with-param name="after.tstamp" select="number($current.diff.group/@tstamp.last)" as="xs:double" tunnel="yes"/>
                                                 <xsl:with-param name="before.tstamp" select="number($local.diff.groups[$pos + 1]/@tstamp.first)" as="xs:double" tunnel="yes"/>
                                             </xsl:apply-templates>  
                                         </xsl:when>
-                                        <!-- when this is the last variant section, take all material following it -->
+                                        <!-\- when this is the last variant section, take all material following it -\->
                                         <xsl:otherwise>
                                             <xsl:apply-templates select="$core.staff/child::mei:layer/node()" mode="get.by.tstamps">
                                                 <xsl:with-param name="after.tstamp" select="number($current.diff.group/@tstamp.last)" as="xs:double" tunnel="yes"/>
                                             </xsl:apply-templates>  
                                         </xsl:otherwise>
                                     </xsl:choose>
-                                </xsl:for-each>
+                                </xsl:for-each>-->
+                                
+                                
+                                <xsl:apply-templates select="child::mei:layer/node()" mode="get.by.tstamps">
+                                    <xsl:with-param name="local.diff.groups" select="$local.diff.groups" as="node()+" tunnel="yes"/>
+                                    <xsl:with-param name="source.staff" select="$source.staff" as="node()" tunnel="yes"/>
+                                </xsl:apply-templates>    
+                                
+                                
                             <!--
                                 <xsl:choose>
                                     
@@ -1365,14 +1383,34 @@
         <xsl:param name="from.tstamp" as="xs:double?" tunnel="yes" required="no"/>
         <xsl:param name="to.tstamp" as="xs:double?" tunnel="yes" required="no"/>
         <xsl:param name="after.tstamp" as="xs:double?" tunnel="yes" required="no"/>
+        <xsl:param name="local.diff.groups" as="node()*" tunnel="yes" required="no"/>
+        <xsl:param name="source.staff" as="node()?" tunnel="yes" required="no"/>
         
         <xsl:variable name="tstamp" select="number(@tstamp)" as="xs:double"/>
         
-        <xsl:if test="ancestor::mei:staff[@xml:id = 'core_mov6_measure94_s5']">
-            <xsl:message select="."/>
-        </xsl:if>
+        <xsl:variable name="isSingleApp" as="xs:boolean">
+            <xsl:choose>
+                <!-- there are no diffs around -->
+                <xsl:when test="not(exists($local.diff.groups)) or count($local.diff.groups) = 0">
+                    <xsl:value-of select="false()"/>
+                </xsl:when>
+                <!-- there is a diff.group that contains exactly this tstamp, nothing else -->
+                <xsl:when test="exists(diffGroup[@tstamp.first = $tstamp and @tstamp.last = $tstamp])">
+                    <xsl:value-of select="true()"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:value-of select="false()"/>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:variable>
+        
         
         <xsl:choose>
+            <xsl:when test="exists($local.diff.groups) and count($local.diff.groups) ge 1">
+                
+            </xsl:when>
+            
+            
             <!-- when a range for tstamps is included -->
             <xsl:when test="$from.tstamp and $to.tstamp">
                 <!-- copy only if tstamp falls into the range -->

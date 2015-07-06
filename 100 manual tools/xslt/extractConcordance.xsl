@@ -4,7 +4,7 @@
     xmlns:xd="http://www.oxygenxml.com/ns/doc/xsl"
     xmlns:mei="http://www.music-encoding.org/ns/mei"
     exclude-result-prefixes="xs xd"
-    version="2.0">
+    version="3.0">
     <xd:doc scope="stylesheet">
         <xd:desc>
             <xd:p><xd:b>Created on:</xd:b> Feb 21, 2013</xd:p>
@@ -15,7 +15,8 @@
     
     <xsl:output method="xml" indent="yes"/>
     
-    <xsl:variable name="sources" select="collection('../sources/?select=*.xml')//mei:mei[not(starts-with(tokenize(document-uri(./root()),'/')[last()],'_'))]"/>
+    <xsl:variable name="basePath" select="substring-before(document-uri(/),'/edition')" as="xs:string"/>
+    <xsl:variable name="sources" select="collection($basePath || '/musicSources/sourcePrep/00 measure positions/?select=*.xml')//mei:mei[not(starts-with(tokenize(document-uri(./root()),'/')[last()],'_'))]"/>
     
     <xsl:template match="/">
         <concordance name="Taktkonkordanz nach neuer Struktur">
@@ -37,7 +38,7 @@
     
     <xsl:template match="mei:measure">
         <xsl:variable name="coreID" select="@xml:id" as="xs:string"/>
-        <xsl:variable name="prefix" select="'xmldb:exist:///db/contents/revisedStructure/sources/'" as="xs:string"/>
+        <xsl:variable name="prefix" select="'xmldb:exist:///db/contents/sources/'" as="xs:string"/>
         <xsl:variable name="measures" select="$sources//mei:measure[@sameas = concat('../core.xml#',$coreID)]" as="node()*"/>
         
         <xsl:variable name="references" as="xs:string*">

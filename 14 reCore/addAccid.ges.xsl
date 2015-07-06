@@ -34,7 +34,7 @@
     <xsl:param name="octave" select="'all'" as="xs:string"/>
     <xsl:param name="range" select="'measure'" as="xs:string"/>
     
-    <xsl:variable name="xsl.version" select="'0.8'"/>
+    <xsl:variable name="xsl.version" select="'0.9'"/>
     
     <xsl:template match="/">
         <xsl:if test="not($octave = ('all','strict'))">
@@ -71,8 +71,19 @@
             </xsl:message>
         </xsl:if>
         
-        <xsl:apply-templates select="/" mode="addAccid.ges"/>
+        <xsl:variable name="added.accids" as="node()*">
+            <xsl:apply-templates select="/" mode="addAccid.ges"/>    
+        </xsl:variable>
         
+        <xsl:apply-templates select="$added.accids" mode="addIDs"/>
+        
+    </xsl:template>
+    
+    <xsl:template match="mei:mdiv//mei:*[not(@xml:id)]" mode="addIDs">
+        <xsl:copy>
+            <xsl:attribute name="xml:id" select="'g'||uuid:randomUUID()"/>
+            <xsl:apply-templates select="node() | @*" mode="#current"/>
+        </xsl:copy>
     </xsl:template>
     
     <xsl:template match="mei:appInfo" mode="addAccid.ges">
@@ -195,9 +206,14 @@
                 
                 <!-- if note is tied to note in preceding staff -->
                 <xsl:when test="@tie and @tie = ('m','t') and @tstamp = '1'">
-                    <xsl:variable name="tieStart" select="local:getTieStartInPrecedingStaff(ancestor::mei:staff,$current.pname)" as="element()"/>
+                    <xsl:variable name="tieStart" select="local:getTieStartInPrecedingStaff(ancestor::mei:staff,$current.pname)" as="element()?"/>
                     
                     <xsl:choose>
+                        
+                        <!-- the note seems incorrectly tied -->
+                        <xsl:when test="not(exists($tieStart))">
+                            <xsl:message terminate="no" select="'note ' || @xml:id || ' in ' || ancestor::mei:staff/@xml:id || ' seems incorrectly tied. Please check!'"/>
+                        </xsl:when>
                         <!-- the note where the tie starts has an @accid by itself -->
                         <xsl:when test="$tieStart/@accid">
                             <xsl:attribute name="accid.ges" select="string($tieStart/@accid)"/>
@@ -254,10 +270,13 @@
         <xsl:variable name="preceding.staff" select="local:getPrecedingStaff($staff)"/>
         <xsl:choose>
             <xsl:when test="$preceding.staff//mei:note[@tie = 'i' and @pname = $pname]">
-                <xsl:sequence select="$preceding.staff//mei:note[@tie = 'i' and @pname = $pname][last()]"/>
+                <xsl:sequence select="($preceding.staff//mei:note[@tie = 'i' and @pname = $pname])[last()]"/>
+            </xsl:when>
+            <xsl:when test="$preceding.staff">
+                <xsl:sequence select="local:getTieStartInPrecedingStaff($preceding.staff,$pname)"/>
             </xsl:when>
             <xsl:otherwise>
-                <xsl:sequence select="local:getTieStartInPrecedingStaff($preceding.staff,$pname)"/>
+                
             </xsl:otherwise>
         </xsl:choose>
         

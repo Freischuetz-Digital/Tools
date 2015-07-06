@@ -29,7 +29,7 @@
     <xsl:param name="checkSetup" select="'true'" as="xs:string"/>
     
     <!-- version of this stylesheet -->
-    <xsl:variable name="xsl.version" select="'1.0.0'"/>
+    <xsl:variable name="xsl.version" select="'1.0.1'"/>
     
     <!-- gets global variables based on some general principles of the Freischütz Data Model -->
     <xsl:variable name="source.id" select="substring-before(/mei:mei/@xml:id,'_')" as="xs:string"/>
@@ -37,15 +37,15 @@
     <xsl:variable name="mov.n" select="substring-after($mov.id,'_mov')" as="xs:string"/>
     
     <!-- perform the checks necessary for $checkSetup -->
-    <xsl:variable name="correctFolder" select="starts-with(reverse(tokenize(document-uri(/),'/'))[3],'12.1')" as="xs:boolean"/>
-    <xsl:variable name="basePath" select="substring-before(document-uri(/),'/12')"/>
-    <xsl:variable name="sourceThereAlready" select="doc-available(concat($basePath,'/13%20reCored/',$source.id,'/',$mov.id,'.xml'))" as="xs:boolean"/>
-    <xsl:variable name="coreThereAlready" select="doc-available(concat($basePath,'/13%20reCored/core_mov',$mov.n,'.xml'))" as="xs:boolean"/>
+    <xsl:variable name="correctFolder" select="starts-with(reverse(tokenize(document-uri(/),'/'))[3],'12')" as="xs:boolean"/>
+    <xsl:variable name="basePath" select="substring-before(document-uri(/),'/1')"/>
+    <xsl:variable name="sourceThereAlready" select="doc-available(concat($basePath,'/14%20reCored/',$source.id,'/',$mov.id,'.xml'))" as="xs:boolean"/>
+    <xsl:variable name="coreThereAlready" select="doc-available(concat($basePath,'/14%20reCored/core_mov',$mov.n,'.xml'))" as="xs:boolean"/>
     
     <xsl:template match="/">
         
         <xsl:if test="$checkSetup != 'true'">
-            <xsl:message terminate="no" select="'You decided against using this file in its original context. Be aware that thinks may break now…'"/>
+            <xsl:message terminate="no" select="'You decided against using this file in its original context. Be aware that things may break now…'"/>
         </xsl:if>
         
         <xsl:if test="$checkSetup = 'true' and not($correctFolder)">
@@ -53,7 +53,7 @@
         </xsl:if>
         
         <xsl:if test="$checkSetup = 'true' and $sourceThereAlready">
-            <xsl:message terminate="yes" select="'There is already a processed version of the file in /13 reCored…'"/>
+            <xsl:message terminate="yes" select="'There is already a processed version of the file in /14 reCored…'"/>
         </xsl:if>
         
         <xsl:if test="$checkSetup = 'true' and $coreThereAlready">
@@ -64,16 +64,20 @@
             <xsl:apply-templates mode="coreDraft"/>
         </xsl:variable>
         
+        <xsl:copy-of select="$coreDraft"/>
+        
         <!-- source file -->
-        <xsl:result-document href="{concat($basePath,'/13%20reCored/',$source.id,'/',$mov.id,'.xml')}">
+        <xsl:result-document href="{concat($basePath,'/14%20reCored/',$source.id,'/',$mov.id,'.xml')}">
             <xsl:apply-templates mode="source">
                 <xsl:with-param name="coreDraft" select="$coreDraft" tunnel="yes"/>
             </xsl:apply-templates>
         </xsl:result-document>
         
         <!-- core file -->
-        <xsl:result-document href="{concat($basePath,'/13%20reCored/core_mov',$mov.n,'.xml')}">
-            <xsl:apply-templates select="$coreDraft" mode="core"/>
+        <xsl:result-document href="{concat($basePath,'/14%20reCored/core_mov',$mov.n,'.xml')}">
+            <xsl:apply-templates select="$coreDraft" mode="core">
+                <xsl:with-param name="coreDraft" select="$coreDraft" tunnel="yes"/>
+            </xsl:apply-templates>
         </xsl:result-document>
         
     </xsl:template>
@@ -94,8 +98,13 @@
     
     <!-- resolving choices into apps when necessary -->
     <xsl:template match="mei:choice" mode="coreDraft">
+        
+        <xsl:if test="count(child::mei:expan) gt 1">
+            <xsl:message select="'working on choice ' || @xml:id"></xsl:message>
+        </xsl:if>
+        
         <xsl:choose>
-            <xsl:when test="(count(mei:corr) gt 1) or (count(mei:reg) gt 1) or (count(mei:expan gt 1))">
+            <xsl:when test="(count(child::mei:corr) gt 1) or (count(child::mei:reg) gt 1)">
                 <app xmlns="http://www.music-encoding.org/ns/mei" xml:id="{'c'||uuid:randomUUID()}">
                     <xsl:apply-templates select="node()" mode="#current"/>
                 </app>
@@ -178,6 +187,7 @@
     <xsl:template match="@place" mode="coreDraft"/>
     <xsl:template match="mei:facsimile" mode="coreDraft"/>
     <xsl:template match="@facs" mode="coreDraft"/>
+    <xsl:template match="@corresp" mode="coreDraft"/>
     
     <!-- ***SOURCE*MODE*********************************** -->
     
@@ -186,7 +196,9 @@
         <xsl:param name="coreDraft" tunnel="yes"/>
         <xsl:variable name="ref.id" select="."/>
         <xsl:attribute name="xml:id" select="."/>
-        <xsl:attribute name="sameas" select="'freidi-musicCore.xml#' || $coreDraft//mei:*[@old.id = $ref.id]/@xml:id"/>
+        <xsl:if test="not(local-name(parent::mei:*) = ('choice'))">
+            <xsl:attribute name="sameas" select="'freidi-musicCore.xml#' || $coreDraft//mei:*[@old.id = $ref.id]/@xml:id"/>    
+        </xsl:if>
     </xsl:template>
     
     <!-- all @sameas references will be rewritten by the preceding template, which generates a @sameas for everything with an @xml:id -->
@@ -242,6 +254,32 @@
         <mRest xmlns="http://www.music-encoding.org/ns/mei">
             <xsl:apply-templates select="node() | @*" mode="#current"/>
         </mRest>
+    </xsl:template>
+    
+    <!-- adjust @startid and @endid -->
+    <xsl:template match="@startid" mode="core">
+        <xsl:param name="coreDraft" tunnel="yes" as="node()"/>
+        
+        <xsl:variable name="tokens" select="tokenize(normalize-space(.),' ')" as="xs:string*"/>
+        <xsl:variable name="new.refs" as="xs:string*">
+            <xsl:for-each select="$tokens">
+                <xsl:variable name="current.token" select="." as="xs:string"/>
+                <xsl:value-of select="$coreDraft//mei:*[@old.id = substring($current.token,2)]/@xml:id"/>
+            </xsl:for-each>
+        </xsl:variable>
+        <xsl:attribute name="startid" select="'#' || string-join($new.refs,' #')"/>
+    </xsl:template>
+    <xsl:template match="@endid" mode="core">
+        <xsl:param name="coreDraft" tunnel="yes" as="node()"/>
+        
+        <xsl:variable name="tokens" select="tokenize(normalize-space(.),' ')" as="xs:string*"/>
+        <xsl:variable name="new.refs" as="xs:string*">
+            <xsl:for-each select="$tokens">
+                <xsl:variable name="current.token" select="." as="xs:string"/>
+                <xsl:value-of select="$coreDraft//mei:*[@old.id = substring($current.token,2)]/@xml:id"/>
+            </xsl:for-each>
+        </xsl:variable>
+        <xsl:attribute name="endid" select="'#' || string-join($new.refs,' #')"/>
     </xsl:template>
     
     <!-- standard copy template for all modes -->
