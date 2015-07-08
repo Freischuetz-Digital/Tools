@@ -31,6 +31,11 @@
     <xsl:output method="xml" indent="yes" encoding="UTF-8"/>
     
     <xd:doc scope="component">
+        <xd:desc>The newSchemaRef parameter defines a new URL for RNG and Schematron schemata; if empty the existing schemaRef will be retained</xd:desc>
+    </xd:doc>
+    <xsl:param name="newSchemaRef"/>
+    
+    <xd:doc scope="component">
         <xd:desc>
             <xd:p>Parameter for mdiv id</xd:p>
         </xd:desc>
@@ -782,17 +787,19 @@
         <xd:desc>Replace general mei-all.rng references with custom freidi-schema reference</xd:desc>
     </xd:doc>
     <xsl:template match="processing-instruction('xml-model')" mode="lastRun">
-        <xsl:choose>
-            <xsl:when test="contains(.,'relaxng')">
-                <xsl:processing-instruction name="xml-model">href="../../../schemata/rng/freidi-schema-musicSource.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"</xsl:processing-instruction>
-            </xsl:when>
-            <xsl:when test="contains(.,'schematron')">
-                <xsl:processing-instruction name="xml-model">href="../../../schemata/rng/freidi-schema-musicSource.rng" type="application/xml" schematypens="http://purl.oclc.org/dsdl/schematron"</xsl:processing-instruction>
-            </xsl:when>
-            <xsl:otherwise>
-                <xsl:apply-templates select="." mode="#current"/>
-            </xsl:otherwise>
-        </xsl:choose>
+        <xsl:if test="$newSchemaRef!=''">
+            <xsl:choose>
+                <xsl:when test="contains(.,'relaxng')">
+                    <xsl:processing-instruction name="xml-model"><xsl:text>href="</xsl:text><xsl:value-of select="$newSchemaRef"/><xsl:text>" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"</xsl:text></xsl:processing-instruction>
+                </xsl:when>
+                <xsl:when test="contains(.,'schematron')">
+                    <xsl:processing-instruction name="xml-model"><xsl:text>href="</xsl:text><xsl:value-of select="$newSchemaRef"/><xsl:text>" type="application/xml" schematypens="http://purl.oclc.org/dsdl/schematron"</xsl:text></xsl:processing-instruction>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:apply-templates select="." mode="#current"/>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:if>
     </xsl:template>
     
 </xsl:stylesheet>
