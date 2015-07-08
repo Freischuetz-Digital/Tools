@@ -136,13 +136,445 @@
                     </xsl:otherwise>
                 </xsl:choose>
             </xsl:when>
+            <!-- profile hairpins -->
             <xsl:when test="local-name($controlEvent) = 'hairpin'">
                 
+                <xsl:variable name="start.tstamp" select="$controlEvent/@tstamp" as="xs:string"/>
+                <xsl:variable name="end.tstamp" select="$controlEvent/substring-after(@tstamp2,'m+')" as="xs:string"/>
+                <xsl:variable name="end.measure" as="xs:string">
+                    <xsl:choose>
+                        <xsl:when test="starts-with($controlEvent/@tstamp2,'0m+')">
+                            <xsl:value-of select="$controlEvent/ancestor::mei:measure/@n"/>
+                        </xsl:when>
+                        <xsl:when test="contains($controlEvent/@tstamp2,'m+')">
+                            <xsl:value-of select="$controlEvent/ancestor::mei:measure/following::mei:measure[position() = number(substring-before($controlEvent,'m+'))]/@n"/>
+                        </xsl:when>
+                    </xsl:choose>
+                </xsl:variable>
+                
+                <!-- debug -->
+                <xsl:if test="$end.measure != string(number($end.measure))">
+                    <xsl:message select="'$target.measure/@n for slur ' || $controlEvent/@xml:id || ' contains characters. Please check!'" terminate="yes"/>
+                </xsl:if>
+                
+                <xsl:choose>
+                    <!-- separate crescendo from diminuendo -->
+                    <xsl:when test="$controlEvent/@form = 'cres'">                        
+                        <hairpin.cres xml:id="{$controlEvent/@xml:id}" staff.n="{$controlEvent/@staff}" start.tstamp="{$start.tstamp}" end.tstamp="{$end.tstamp}" end.measure="{$end.measure}"/>                        
+                    </xsl:when>
+                    <xsl:when test="$controlEvent/@form = 'dim'">                        
+                        <hairpin.dim xml:id="{$controlEvent/@xml:id}" staff.n="{$controlEvent/@staff}" start.tstamp="{$start.tstamp}" end.tstamp="{$end.tstamp}" end.measure="{$end.measure}"/>                        
+                    </xsl:when>
+                </xsl:choose>
             </xsl:when>
             <xsl:when test="local-name($controlEvent) = 'dynam'">
                 
+                <xsl:variable name="value" select="$controlEvent/replace(normalize-space(string-join(.//text(),'')),'[\.:]','')"/>
+                <!-- normalize values -->
+                <xsl:variable name="normalizedValue" as="xs:string">
+                    <xsl:choose>         
+                        <xsl:when test="$value = 'cres'">
+                            <xsl:value-of select="'cresc'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'cresc'">
+                            <xsl:value-of select="'cresc'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'crescendo'">
+                            <xsl:value-of select="'cresc'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'crescendo assai'">
+                            <xsl:value-of select="'crescAssai'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'crescen'">
+                            <xsl:value-of select="'cresc'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'decresc'">
+                            <xsl:value-of select="'decresc'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'decrescendo'">
+                            <xsl:value-of select="'decresc'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'crescendo poco a poco'">
+                            <xsl:value-of select="'crescPocoAPoco'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'crescendo poco poco a poco'">
+                            <xsl:value-of select="'crescPocoAPoco'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'crescendo a poco a poco'">
+                            <xsl:value-of select="'crescPocoAPoco'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'poco a poco cresc'">
+                            <xsl:value-of select="'crescPocoAPoco'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'poco a poco crescendo'">
+                            <xsl:value-of select="'crescPocoAPoco'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'f'">
+                            <xsl:value-of select="'f'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'ff'">
+                            <xsl:value-of select="'ff'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'ffo'">
+                            <xsl:value-of select="'ff'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'ffr'">
+                            <xsl:value-of select="'ff'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'fo'">
+                            <xsl:value-of select="'f'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'for'">
+                            <xsl:value-of select="'f'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'fp'">
+                            <xsl:value-of select="'fp'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'fpo'">
+                            <xsl:value-of select="'fp'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'fr'">
+                            <xsl:value-of select="'f'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'mf'">
+                            <xsl:value-of select="'mf'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'mfr'">
+                            <xsl:value-of select="'mf'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'mrf'">
+                            <xsl:value-of select="'mf'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'mzfr'">
+                            <xsl:value-of select="'mf'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'p'">
+                            <xsl:value-of select="'p'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'po'">
+                            <xsl:value-of select="'p'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'pp'">
+                            <xsl:value-of select="'pp'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'ppo'">
+                            <xsl:value-of select="'pp'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'ppp'">
+                            <xsl:value-of select="'ppp'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'sf'">
+                            <xsl:value-of select="'sf'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'sfr'">
+                            <xsl:value-of select="'sf'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'sfo'">
+                            <xsl:value-of select="'sf'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'sfz'">
+                            <xsl:value-of select="'fz'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'fz'">
+                            <xsl:value-of select="'fz'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'fzo'">
+                            <xsl:value-of select="'fz'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'rf'">
+                            <xsl:value-of select="'rf'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'rfz'">
+                            <xsl:value-of select="'rf'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'rfo'">
+                            <xsl:value-of select="'rf'"/>
+                        </xsl:when>
+                        <!-- unknown / faulty encodings:  -->
+                        <xsl:when test="$value = 'cres e stringendo'">
+                            <xsl:message terminate="yes" select="'Since element ' || $controlEvent/@xml:id || ' contains /stringendo/, it should be an mei:dir, not an mei:dynam. Please correct!'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'cresc e stringendo'">
+                            <xsl:message terminate="yes" select="'Since element ' || $controlEvent/@xml:id || ' contains /stringendo/, it should be an mei:dir, not an mei:dynam. Please correct!'"/>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:message terminate="yes" select="'a value of ' || $value || ' for dynam ' || $controlEvent/@xml:id || ' is currently not supported by merge2Core.xsl. Please check!'"/>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:variable>
+                
+                <dynam xml:id="{$controlEvent/@xml:id}" staff.n="{$controlEvent/@staff}" start.tstamp="{$controlEvent/@tstamp}" value="{$normalizedValue}"/>
+                
             </xsl:when>
             <xsl:when test="local-name($controlEvent) = 'dir'">
+                
+                <xsl:variable name="value" select="normalize-space($controlEvent/replace(normalize-space(string-join(.//text(),'')),'[\.:&amp;apos;]',''))"/>
+                
+                <xsl:variable name="normalizedValue" as="xs:string">
+                    <xsl:choose>
+                        <xsl:when test="$value = ' '">
+                            <xsl:message terminate="yes" select="'dir ' || $controlEvent/@xml:id || ' seems to have no text content. Please check!'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = '1mo solo'">
+                            <xsl:value-of select="'primoSolo'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = '2do'">
+                            <xsl:value-of select="'secondo'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = '2do solo'">
+                            <xsl:value-of select="'secondoSolo'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'a 2'">
+                            <xsl:value-of select="'aDue'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'a due'">
+                            <xsl:value-of select="'aDue'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'à 2'">
+                            <xsl:value-of select="'aDue'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'à piacere, mà con tutta la forza'">
+                            <xsl:value-of select="'aPiacereMaConTuttaLaForza'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'a piacere mi con tutta la forza'">
+                            <xsl:value-of select="'aPiacereMaConTuttaLaForza'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'a piacere, mà con tutto la forza'">
+                            <xsl:value-of select="'aPiacereMaConTuttaLaForza'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'a tempo'">
+                            <xsl:value-of select="'aTempo'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'a tempor'">
+                            <xsl:value-of select="'aTempo'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'accelerando'">
+                            <xsl:value-of select="'accel'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'accellerando'">
+                            <xsl:value-of select="'accel'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'adagio'">
+                            <xsl:value-of select="'adagio'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'agitato'">
+                            <xsl:value-of select="'agitato'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'allegretto grazioso'">
+                            <xsl:value-of select="'allegrettoGrazioso'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'allegro'">
+                            <xsl:value-of select="'allegro'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'allo'">
+                            <xsl:value-of select="'allegro'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'allegro vivace'">
+                            <xsl:value-of select="'allegroVivace'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'allo vivace'">
+                            <xsl:value-of select="'allegroVivace'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'andante'">
+                            <xsl:value-of select="'andante'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'andantino'">
+                            <xsl:value-of select="'andantino'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'arco'">
+                            <xsl:value-of select="'arco'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'assai dol'">
+                            <xsl:value-of select="'dolceAssai'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'assai dolce'">
+                            <xsl:value-of select="'dolceAssai'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'colla parte'">
+                            <xsl:value-of select="'collaParte'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'colla parte,'">
+                            <xsl:value-of select="'collaParte'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'con forza'">
+                            <xsl:value-of select="'conForza'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'con fuoco'">
+                            <xsl:value-of select="'conFuoco'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'con sordini'">
+                            <xsl:value-of select="'conSordini'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'cres e stringendo'">
+                            <xsl:value-of select="'cresStringendo'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'cresc e string'">
+                            <xsl:value-of select="'cresStringendo'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'cresc e stringendo'">
+                            <xsl:value-of select="'cresStringendo'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'crescendo e stringendo'">
+                            <xsl:value-of select="'cresStringendo'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'stringendo cresc'">
+                            <xsl:value-of select="'cresStringendo'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'stringendo e cresc'">
+                            <xsl:value-of select="'cresStringendo'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'stringendo e crescendo'">
+                            <xsl:value-of select="'cresStringendo'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'divisi'">
+                            <xsl:value-of select="'divisi'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'dol'">
+                            <xsl:value-of select="'dolce'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'dolce'">
+                            <xsl:value-of select="'dolce'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'dol assai'">
+                            <xsl:value-of select="'dolceAssai'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'dolce assai'">
+                            <xsl:value-of select="'dolceAssai'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'in e'">
+                            <xsl:value-of select="'inE'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'legeremente'">
+                            <xsl:value-of select="'leggeremente'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'leggeremente'">
+                            <xsl:value-of select="'leggeremente'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'leggeremento'">
+                            <xsl:value-of select="'leggeremente'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'leggermente'">
+                            <xsl:value-of select="'leggeremente'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'molto dol'">
+                            <xsl:value-of select="'moltoDolce'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'molto dolce'">
+                            <xsl:value-of select="'moltoDolce'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'morendo'">
+                            <xsl:value-of select="'morendo'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'pizz'">
+                            <xsl:value-of select="'pizz'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'pizzo'">
+                            <xsl:value-of select="'pizz'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'punto darco'">
+                            <xsl:value-of select="'puntoDarco'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'puto darco'">
+                            <xsl:value-of select="'puntoDarco'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'recit'">
+                            <xsl:value-of select="'recit'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'scherz'">
+                            <xsl:value-of select="'scherzando'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'scherzando'">
+                            <xsl:value-of select="'scherzando'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'senza sord'">
+                            <xsl:value-of select="'senzaSordini'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'senza sordini'">
+                            <xsl:value-of select="'senzaSordini'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'soli'">
+                            <xsl:value-of select="'soli'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'solo'">
+                            <xsl:value-of select="'solo'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'stacato'">
+                            <xsl:value-of select="'staccato'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'stacc'">
+                            <xsl:value-of select="'staccato'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'staccato'">
+                            <xsl:value-of select="'staccato'"/>
+                        </xsl:when>                        
+                        <xsl:when test="$value = 'tempo'">
+                            <xsl:value-of select="'tempo'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'ten'">
+                            <xsl:value-of select="'tenuto'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'unis'">
+                            <xsl:value-of select="'unisono'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'vivace'">
+                            <xsl:value-of select="'vivace'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'vivace con fuoco'">
+                            <xsl:value-of select="'vivaceConFuoco'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'vivace von fuoco'">
+                            <xsl:value-of select="'vivaceConFuoco'"/>
+                        </xsl:when>
+                        <!-- faulty / unknown encodings: -->
+                        <xsl:when test="$value = 'divisi con sordini'">
+                            <xsl:message terminate="yes" select="'/divisi con sordini/ seems like two different directives, dont you think? Please split up mei:dir@xml:id=' || $controlEvent/@xml:id"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'divisi sordini'">
+                            <xsl:message terminate="yes" select="'/divisi sordini/ seems like two different directives, dont you think? Please split up mei:dir@xml:id=' || $controlEvent/@xml:id"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'cres'">
+                            <xsl:message terminate="yes" select="'Element ' || $controlEvent/@xml:id || ' seems like an mei:dynam, not mei:dir. Please correct!'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'cresc'">
+                            <xsl:message terminate="yes" select="'Element ' || $controlEvent/@xml:id || ' seems like an mei:dynam, not mei:dir. Please correct!'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'crescendo'">
+                            <xsl:message terminate="yes" select="'Element ' || $controlEvent/@xml:id || ' seems like an mei:dynam, not mei:dir. Please correct!'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'crescendo assai'">
+                            <xsl:message terminate="yes" select="'Element ' || $controlEvent/@xml:id || ' seems like an mei:dynam, not mei:dir. Please correct!'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'crescen'">
+                            <xsl:message terminate="yes" select="'Element ' || $controlEvent/@xml:id || ' seems like an mei:dynam, not mei:dir. Please correct!'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'decresc'">
+                            <xsl:message terminate="yes" select="'Element ' || $controlEvent/@xml:id || ' seems like an mei:dynam, not mei:dir. Please correct!'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'decrescendo'">
+                            <xsl:message terminate="yes" select="'Element ' || $controlEvent/@xml:id || ' seems like an mei:dynam, not mei:dir. Please correct!'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'crescendo poco a poco'">
+                            <xsl:message terminate="yes" select="'Element ' || $controlEvent/@xml:id || ' seems like an mei:dynam, not mei:dir. Please correct!'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'crescendo poco poco a poco'">
+                            <xsl:message terminate="yes" select="'Element ' || $controlEvent/@xml:id || ' seems like an mei:dynam, not mei:dir. Please correct!'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'crescendo a poco a poco'">
+                            <xsl:message terminate="yes" select="'Element ' || $controlEvent/@xml:id || ' seems like an mei:dynam, not mei:dir. Please correct!'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'poco a poco cresc'">
+                            <xsl:message terminate="yes" select="'Element ' || $controlEvent/@xml:id || ' seems like an mei:dynam, not mei:dir. Please correct!'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'poco a poco crescendo'">
+                            <xsl:message terminate="yes" select="'Element ' || $controlEvent/@xml:id || ' seems like an mei:dynam, not mei:dir. Please correct!'"/>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:message terminate="yes" select="'a value of ' || $value || ' for dir ' || $controlEvent/@xml:id || ' is currently not supported by merge2Core.xsl. Please check!'"/>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:variable>
+                
+                <dir xml:id="{$controlEvent/@xml:id}" staff.n="{$controlEvent/@staff}" start.tstamp="{$controlEvent/@tstamp}" value="{$normalizedValue}"/>
                 
             </xsl:when>
         </xsl:choose>
@@ -571,6 +1003,10 @@
             <xsl:message terminate="yes" select="'There is already a processed version of the file in /14 reCored…'"/>
         </xsl:if>-->
         
+        <xsl:if test="not($source.raw//mei:application/mei:name[text() = 'addAccid.ges.xsl'])">
+            <xsl:message terminate="yes" select="'The source file needs to be processed by addAccid.ges.xsl prior to merging into the core. Processing terminated.'"/>
+        </xsl:if>
+        
         <xsl:if test="not($coreThereAlready)">
             <xsl:message terminate="yes" select="'There is no core file for mov' || $mov.n || ' yet. Please use setupNewCore.xsl first. ' || concat($basePath,'/14%20reCored/core_mov',$mov.n,'.xml')"/>
         </xsl:if>
@@ -605,7 +1041,7 @@
             </xsl:apply-templates>
         </xsl:variable>
         
-        <xsl:copy-of select="$newCore"/>
+        
         
         <!--<xsl:variable name="coreDraft">
             <xsl:apply-templates mode="coreDraft"/>
@@ -613,7 +1049,7 @@
         
         <xsl:choose>
             <xsl:when test="$mode = 'probe'">
-                
+                <xsl:copy-of select="$newCore"/>
             </xsl:when>
             <xsl:otherwise>
                 <!-- source file -->
@@ -1284,6 +1720,7 @@
             <xsl:when test="not(ancestor::mei:rdg) and $diff.groups//ce.match[@core.id = $this/@xml:id]">
                 
                 <xsl:variable name="match" select="$diff.groups//ce.match[@core.id = $this/@xml:id]" as="node()"/>
+                
                 <xsl:variable name="source.slur" select="$source.prep//mei:slur[@xml:id = $match/@source.id]" as="node()"/>
                 
                 <!-- decide if source has alternate readings or not -->
@@ -1360,6 +1797,172 @@
         </xsl:choose>
         
     </xsl:template>
+    
+<!-- todo: Baustelle cE -->
+
+    <xsl:template match="mei:app[parent::mei:measure]/mei:rdg[mei:hairpin]" mode="generate.apps">
+        <xsl:param name="diff.groups" as="node()" tunnel="yes"/>
+        <xsl:param name="source.prep" as="node()" tunnel="yes"/>
+        
+        <xsl:variable name="hairpin.id" select="child::mei:hairpin/@xml:id" as="xs:string"/>
+        <xsl:variable name="match" select="$diff.groups//ce.match[@core.id = $hairpin.id]" as="node()?"/>
+        <xsl:variable name="missing.in.source" select="$diff.groups//ce.diff[@existing.id = $hairpin.id][@type = 'missing.ce'][@missing.in = 'source']" as="node()?"/>
+        
+        <!-- when applicable, add reference to source to rdg, and add reference to source slur's id for later processing -->
+        <xsl:choose>
+            <xsl:when test="$missing.in.source">
+                <xsl:copy-of select="."/>
+                <!-- add empty rdg for new source only once -->
+                <xsl:if test="(parent::mei:app//mei:hairpin)[last()]/@xml:id = $hairpin.id">
+                    <xsl:variable name="rdg.id" select="'x' || uuid:randomUUID()" as="xs:string"/>
+                    
+                    <rdg xmlns="http://www.music-encoding.org/ns/mei" xml:id="{$rdg.id}" source="#{$source.id}"/>
+                    <annot xmlns="http://www.music-encoding.org/ns/mei" xml:id="j{uuid:randomUUID()}" type="diff" subtype="slur" plist="#{$rdg.id}">
+                        <xsl:copy-of select="$missing.in.source"/>
+                        <p>Source <xsl:value-of select="$source.id"/> has no corresponding hairpin.</p>
+                    </annot>
+                    
+                </xsl:if>
+                
+            </xsl:when>
+            <xsl:when test="not(exists($match))">
+                <!-- todo: is this correct? -->
+                <xsl:next-match/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:copy>
+                    <xsl:apply-templates select="node() | @*" mode="#current">
+                        <xsl:with-param name="source.id.toAdd" select="$source.id" tunnel="yes" as="xs:string"/>
+                        <xsl:with-param name="hairpin.id.toAdd" select="$match/@source.id" tunnel="yes" as="xs:string"/>
+                    </xsl:apply-templates>
+                </xsl:copy>
+                
+                <xsl:variable name="source.choice" select="$source.prep//mei:slur[@xml:id = $match/@source.id]/parent::mei:rdg/parent::mei:app" as="node()?"/>
+                <xsl:if test="$source.choice">
+                    
+                    <!-- get all slurs in the source that are not encoded in the core (yet) -->
+                    <xsl:variable name="all.hairpins" select="$source.choice//mei:hairpin" as="node()+"/>
+                    <xsl:variable name="matched.hairpins" select="$all.hairpins/descendant-or-self::mei:hairpin[@xml:id = $diff.groups//ce.match/@source.id]" as="node()+"/>
+                    <xsl:variable name="unmatched.hairpins" select="$all.hairpins[not(@xml:id = $diff.groups//ce.match/@source.id)]" as="node()*"/>
+                    
+                    <!-- when dealing with last matched slur, take care of unmatched slurs, 
+                i.e. those slurs that are only available in the source -->
+                    <xsl:if test="($matched.hairpins/@xml:id)[last()] = $hairpin.id">
+                        <xsl:for-each select="$unmatched.hairpins">
+                            <rdg xmlns="http://www.music-encoding.org/ns/mei" xml:id="x{uuid:randomUUID()}" source="#{$source.id}" n="todo">
+                                <xsl:apply-templates select="." mode="adjustMaterial"/>
+                            </rdg>
+                            <xsl:comment select="'annot: no match for hairpin from source ' || $source.id || ' in core.'"/>
+                        </xsl:for-each>
+                    </xsl:if>
+                </xsl:if>
+                
+            </xsl:otherwise>
+        </xsl:choose>
+        
+    </xsl:template>
+    
+    <!-- resolves slurs -->
+    <xsl:template match="mei:hairpin" mode="generate.apps">
+        <xsl:param name="diff.groups" as="node()" tunnel="yes"/>
+        <xsl:param name="source.prep" as="node()" tunnel="yes"/>
+        <xsl:param name="hairpin.id.toAdd" as="xs:string?" tunnel="yes"/>
+        
+        <xsl:variable name="this" select="." as="node()"/>
+        
+        <xsl:choose>
+            <!-- when a corresponding slur has been identified at an ancestor::rdg, 
+                just add a reference to that slur here -->
+            <xsl:when test="exists($hairpin.id.toAdd)">
+                <xsl:copy>
+                    <xsl:attribute name="synch" select="$hairpin.id.toAdd"/>
+                    <xsl:apply-templates select="node() | @*" mode="#current"/>
+                </xsl:copy>
+            </xsl:when>
+            
+            <!-- when slur has been inambiguous so far, and a match between core and source can be identified -->
+            <xsl:when test="not(ancestor::mei:rdg) and $diff.groups//ce.match[@core.id = $this/@xml:id]">
+                
+                <xsl:variable name="match" select="$diff.groups//ce.match[@core.id = $this/@xml:id]" as="node()"/>
+                
+                <xsl:variable name="source.hairpin" select="$source.prep//mei:hairpin[@xml:id = $match/@source.id]" as="node()"/>
+                
+                <!-- decide if source has alternate readings or not -->
+                <xsl:choose>
+                    <!-- the slur is inambiguous in the source as well -->
+                    <xsl:when test="not($source.hairpin/parent::mei:rdg)">
+                        <xsl:copy>
+                            <xsl:attribute name="synch" select="$match/@source.id"/>
+                            <xsl:apply-templates select="node() | @*" mode="#current"/>
+                        </xsl:copy>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <!-- generate additional rdgs for all slurs from source -->
+                        
+                        <xsl:variable name="rdg1.id" select="'q' || uuid:randomUUID()" as="xs:string"/>
+                        <xsl:variable name="otherHairpins" select="$source.hairpin/ancestor::mei:app//mei:hairpin[@xml:id != $source.hairpin/@xml:id]" as="node()*"/>
+                        <xsl:variable name="rdg.ids" as="xs:string*">
+                            <xsl:for-each select="(1 to count($otherHairpins))">
+                                <xsl:value-of select="'n' || uuid:randomUUID()"/>
+                            </xsl:for-each>
+                        </xsl:variable>
+                        
+                        <app xmlns="http://www.music-encoding.org/ns/mei" xml:id="q{uuid:randomUUID()}">
+                            <rdg xml:id="{$rdg1.id}" source="#{string-join($all.sources.so.far,' #') || ' #' || $source.id}">
+                                <xsl:copy>
+                                    <xsl:attribute name="synch" select="$hairpin.id.toAdd"/>
+                                    <xsl:apply-templates select="node() | @*" mode="#current"/>
+                                </xsl:copy>
+                            </rdg>
+                            <xsl:for-each select="$otherHairpins">
+                                <rdg xml:id="{$rdg.ids[position()]}" source="#{$source.id}">
+                                    <xsl:apply-templates select="." mode="adjustMaterial"/>
+                                </rdg>
+                            </xsl:for-each>
+                        </app>
+                        <annot xmlns="http://www.music-encoding.org/ns/mei" xml:id="r{uuid:randomUUID()}" plist="{'#' || $rdg1.id || ' #' || string-join($rdg.ids, ' #')}" 
+                            type="diff" subtype="hairpin" corresp="#{string-join($all.sources.so.far,' #') || ' #' || $source.id}">
+                            <xsl:copy-of select="$match"/>
+                            <p>Source <xsl:value-of select="$source.id"/> has some alternatives for this hairpin.</p>
+                        </annot>
+                        
+                    </xsl:otherwise>
+                </xsl:choose>
+                
+                
+            </xsl:when>
+            
+            <!-- when the hairpins has been identified as missing in the new source -->
+            <xsl:when test="not(ancestor::mei:rdg) and $diff.groups//ce.diff[@type = 'missing.ce'][@missing.in = 'source'][@existing.id = $this/@xml:id]">
+                
+                <xsl:variable name="rdg1.id" select="'q' || uuid:randomUUID()" as="xs:string"/>
+                <xsl:variable name="rdg2.id" select="'n' || uuid:randomUUID()" as="xs:string"/>
+                
+                <xsl:variable name="diff" select="$diff.groups//ce.diff[@type = 'missing.ce' and @missing.in = 'source' and @existing.id = $this/@xml:id]" as="node()*"/>
+                
+                <app xmlns="http://www.music-encoding.org/ns/mei" xml:id="q{uuid:randomUUID()}">
+                    <rdg xml:id="{$rdg1.id}" source="#{string-join($all.sources.so.far,' #')}">
+                        <xsl:next-match/>
+                    </rdg>
+                    <rdg xml:id="{$rdg2.id}" source="#{$source.id}"/>
+                </app>
+                <annot xmlns="http://www.music-encoding.org/ns/mei" xml:id="r{uuid:randomUUID()}" plist="{'#' || $rdg1.id || ' #' || $rdg2.id}" 
+                    type="diff" subtype="hairpin" corresp="#{string-join($all.sources.so.far,' #') || ' #' || $source.id}">
+                    <xsl:copy-of select="$diff"/>
+                    <p>No corresponding hairpin in source <xsl:value-of select="$source.id"/>.</p>
+                </annot>
+            </xsl:when>
+            
+            <!-- when the slur is nested into a rdg, all corresponding cases are covered from there -->
+            <!-- slur mit rdg in core, aber nicht gematcht -->
+            <xsl:otherwise>
+                <xsl:message select="'this should not have happened at ' || $this/@xml:id" terminate="yes"/>    
+            </xsl:otherwise>
+        </xsl:choose>
+        
+    </xsl:template>
+
+<!-- /Baustelle cE -->
     
     <xsl:template match="mei:rdg/@source" mode="generate.apps">
         <xsl:param name="source.id.toAdd" tunnel="yes" as="xs:string?"/>
