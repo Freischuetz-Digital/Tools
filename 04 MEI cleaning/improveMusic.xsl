@@ -25,7 +25,7 @@
     
     <xd:doc scope="component">
         <xd:desc>
-            <xd:p>Define output method as UTH-8 encoded XML with identation.</xd:p>
+            <xd:p>Define output method as UTF-8 encoded XML with identation.</xd:p>
         </xd:desc>
     </xd:doc>
     <xsl:output method="xml" indent="yes" encoding="UTF-8"/>
