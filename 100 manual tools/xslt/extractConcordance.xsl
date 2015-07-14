@@ -9,7 +9,7 @@
         <xd:desc>
             <xd:p><xd:b>Created on:</xd:b> Feb 21, 2013</xd:p>
             <xd:p><xd:b>Author:</xd:b> Johannes Kepper</xd:p>
-            <xd:p></xd:p>
+            <xd:p>This file is supposed to be applied to the musicCore file (freidi-musicCore.xml).</xd:p>
         </xd:desc>
     </xd:doc>
     
@@ -40,6 +40,11 @@
         <xsl:variable name="coreID" select="@xml:id" as="xs:string"/>
         <xsl:variable name="prefix" select="'xmldb:exist:///db/contents/sources/'" as="xs:string"/>
         <xsl:variable name="measures" select="$sources//mei:measure[@sameas = concat('../core.xml#',$coreID)]" as="node()*"/>
+        
+        <xsl:if test="count($measures) lt count($sources)">
+            <xsl:variable name="unfilled.sources" select="$sources[not(.//mei:measure[@sameas = concat('../core.xml#',$coreID)])]" as="node()+"/>            
+            <xsl:message select="concat('measure ', $coreID,' not referenced in source(s) ',string-join($unfilled.sources/@xml:id,', '))"/>
+        </xsl:if>
         
         <xsl:variable name="references" as="xs:string*">
             <xsl:for-each select="$measures">
