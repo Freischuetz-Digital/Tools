@@ -753,7 +753,7 @@
                 <xsl:element name="changeDesc" namespace="http://www.music-encoding.org/ns/mei">
                     <xsl:variable name="text">
                         Content of <xsl:value-of select="$fileName"/> processed with <xsl:element name="ref" namespace="http://www.music-encoding.org/ns/mei">
-                          <xsl:attribute name="target" select="concat('https://github.com/Freischuetz-Digital/Tools/blob/',$FreiDi-Tools_version,'/04%20MEI%20cleaning/improveMusic.xsl')"/>improveMusic.xsl</xsl:element> from Freischütz Digital Tools <xsl:value-of select="$FreiDi-Tools_version"/> in order to resolve mei:bTrems, mei:fTrems, intermediary mei:scoreDefs and mei:staffDef, transform mei:artic and mei:accid to respective attributes, etc.</xsl:variable>
+                          <xsl:attribute name="target" select="concat('https://github.com/Detmolder-Hoftheater/Tools/blob/',$FreiDi-Tools_version,'/04%20MEI%20cleaning/improveMusic.xsl')"/>improveMusic.xsl</xsl:element> from Freischütz Digital Tools <xsl:value-of select="$FreiDi-Tools_version"/> in order to resolve mei:bTrems, mei:fTrems, intermediary mei:scoreDefs and mei:staffDef, transform mei:artic and mei:accid to respective attributes, etc.</xsl:variable>
                     
                     <xsl:element name="p" namespace="http://www.music-encoding.org/ns/mei">
                         <xsl:value-of select="normalize-space($text)"/>
