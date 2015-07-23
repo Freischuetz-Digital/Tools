@@ -787,8 +787,9 @@
         <xd:desc>Replace general mei-all.rng references with custom freidi-schema reference</xd:desc>
     </xd:doc>
     <xsl:template match="processing-instruction('xml-model')" mode="lastRun">
-        <xsl:if test="$newSchemaRef!=''">
-            <xsl:choose>
+        <xsl:choose>
+          <xsl:when test="$newSchemaRef!=''">
+              <xsl:choose>
                 <xsl:when test="contains(.,'relaxng')">
                     <xsl:processing-instruction name="xml-model"><xsl:text>href="</xsl:text><xsl:value-of select="$newSchemaRef"/><xsl:text>" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"</xsl:text></xsl:processing-instruction>
                 </xsl:when>
@@ -798,8 +799,12 @@
                 <xsl:otherwise>
                     <xsl:apply-templates select="." mode="#current"/>
                 </xsl:otherwise>
-            </xsl:choose>
-        </xsl:if>
+              </xsl:choose>
+            </xsl:when>
+          <xsl:otherwise>
+            <xsl:copy/>
+          </xsl:otherwise>
+        </xsl:choose>
     </xsl:template>
     
 </xsl:stylesheet>
