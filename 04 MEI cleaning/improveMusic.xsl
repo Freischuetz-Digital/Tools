@@ -33,7 +33,7 @@
     <xd:doc scope="component">
         <xd:desc>The newSchemaRef parameter defines a new URL for RNG and Schematron schemata; if empty the existing schemaRef will be retained</xd:desc>
     </xd:doc>
-    <xsl:param name="newSchemaRef"/>
+    <xsl:param name="newSchemaRef">https://raw.githubusercontent.com/music-encoding/music-encoding/MEI2013_v2.1.1/schemata/mei-all.rng</xsl:param>
     
     <xd:doc scope="component">
         <xd:desc>
@@ -209,6 +209,17 @@
             <xsl:attribute name="n" select="$n"/>
             <xsl:apply-templates select="node() | @* except (@xml:id,@n)" mode="#current"/>
         </xsl:copy>
+    </xsl:template>
+    
+    <xd:doc scope="component">
+        <xd:desc>
+            <xd:p>this template takes care that mei:mei element holds meiversion.num</xd:p>
+        </xd:desc>
+    </xd:doc>
+    <xsl:template match="@meiversion.num" mode="lastRun">
+        <xsl:attribute name="meiversion.num">
+            <xsl:value-of select="tokenize(substring-after($newSchemaRef,'MEI2013_v'),'/')[1]"/>
+        </xsl:attribute>
     </xsl:template>
     
     <xd:doc scope="component">
