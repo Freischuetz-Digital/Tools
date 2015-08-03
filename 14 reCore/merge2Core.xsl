@@ -44,11 +44,11 @@
                     </xsl:when>
                     <xsl:when test="local-name($source.att) = $core.atts.names">
                         <!-- the attribute has a different value -->
-                        <diff type="att.value" staff="{$source.raw/id($source.elem/@xml:id)/ancestor::mei:staff/@xml:id}" source.elem.name="{local-name($source.elem)}" source.elem.id="{$source.elem/@xml:id}" att.name="{local-name($source.att)}" source.value="{string($source.att)}" core.value="{string($core.atts[local-name() = local-name($source.att)])}" tstamp="{$source.elem/@tstamp}"/>
+                        <diff type="att.value" staff="{$source.raw/id($source.elem/@xml:id)/ancestor::mei:staff/@xml:id}" source.elem.name="{local-name($source.elem)}" source.elem.id="{$source.elem/@xml:id}" att.name="{local-name($source.att)}" source.value="{string($source.att)}" core.value="{string($core.atts[local-name() = local-name($source.att)])}" core.elem.id="{$core.elem/@xml:id}" tstamp="{$source.elem/@tstamp}"/>
                     </xsl:when>
                     <xsl:otherwise>
                         <!-- the attribute is missing from the core -->
-                        <diff type="att.missing" staff="{$source.raw/id($source.elem/@xml:id)/ancestor::mei:staff/@xml:id}" source.elem.name="{local-name($source.elem)}" source.elem.id="{$source.elem/@xml:id}" missing.in="core" att.name="{local-name($source.att)}" source.value="{string($source.att)}" tstamp="{$source.elem/@tstamp}"/>
+                        <diff type="att.missing" staff="{$source.raw/id($source.elem/@xml:id)/ancestor::mei:staff/@xml:id}" source.elem.name="{local-name($source.elem)}" source.elem.id="{$source.elem/@xml:id}" missing.in="core" att.name="{local-name($source.att)}" source.value="{string($source.att)}" core.elem.id="{$core.elem/@xml:id}" tstamp="{$source.elem/@tstamp}"/>
                     </xsl:otherwise>
                 </xsl:choose>
             </xsl:for-each>
@@ -60,7 +60,7 @@
                     </xsl:when>
                     <xsl:otherwise>
                         <!-- the attribute is missing from the source -->
-                        <diff type="att.missing" staff="{$source.raw/id($source.elem/@xml:id)/ancestor::mei:staff/@xml:id}" source.elem.name="{local-name($source.elem)}" source.elem.id="{$source.elem/@xml:id}" missing.in="source" att.name="{local-name($core.att)}" core.value="{string($core.att)}" tstamp="{$source.elem/@tstamp}"/>
+                        <diff type="att.missing" staff="{$source.raw/id($source.elem/@xml:id)/ancestor::mei:staff/@xml:id}" source.elem.name="{local-name($source.elem)}" source.elem.id="{$source.elem/@xml:id}" missing.in="source" att.name="{local-name($core.att)}" core.value="{string($core.att)}" core.elem.id="{$core.elem/@xml:id}" tstamp="{$source.elem/@tstamp}"/>
                     </xsl:otherwise>
                 </xsl:choose>
             </xsl:for-each>
@@ -1154,6 +1154,74 @@
         
     </xsl:function>
     
+    <!-- compares two arbitrary elements (used in later steps of the comparison) -->
+    <xsl:function name="local:compareElements" as="node()*">
+        <xsl:param name="source.elem" as="node()"/>
+        <xsl:param name="core.elem" as="node()"/>
+        
+        <xsl:sequence select="local:compareAttributes($source.elem,$core.elem)"/>
+        <xsl:choose>
+            <!-- core and source have same number of child elements -->
+            <xsl:when test="count($source.elem/child::mei:*) = count($core.elem/child::mei:*)">
+                
+                <xsl:for-each select="$source.elem/child::mei:*">
+                    <xsl:variable name="pos" select="position()" as="xs:integer"/>
+                    
+                    <xsl:choose>
+                        <xsl:when test="local-name($core.elem/child::mei:*[$pos]) = local-name($source.elem/child::mei:*[$pos])">
+                            <xsl:sequence select="local:compareElements($source.elem/child::mei:*[$pos],$core.elem/child::mei:*[$pos])"/>        
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <diff type="different.elem" source.name="{local-name($source.elem/child::mei:*[$pos])}" source.elem.id="{$source.elem/child::mei:*[$pos]/@xml:id}" core.name="{local-name($core.elem/child::mei:*[$pos])}" core.elem.id="{$core.elem/child::mei:*[$pos]/@xml:id}"/>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                    
+                </xsl:for-each>
+                
+            </xsl:when>
+            <!-- source has more elements than core -->
+            <xsl:when test="count($source.elem/child::mei:*) gt count($core.elem/child::mei:*)">
+                
+                <xsl:for-each select="$core.elem/child::mei:*">
+                    <xsl:variable name="pos" select="position()" as="xs:integer"/>
+                    <xsl:choose>
+                        <xsl:when test="local-name($core.elem/child::mei:*[$pos]) = local-name($source.elem/child::mei:*[$pos])">
+                            <xsl:sequence select="local:compareElements($source.elem/child::mei:*[$pos],$core.elem/child::mei:*[$pos])"/>        
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <diff type="different.elem" source.name="{local-name($source.elem/child::mei:*[$pos])}" source.elem.id="{$source.elem/child::mei:*[$pos]/@xml:id}" core.name="{local-name($core.elem/child::mei:*[$pos])}" core.elem.id="{$core.elem/child::mei:*[$pos]/@xml:id}"/>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:for-each>
+                
+                <xsl:for-each select="$source.elem/child::mei:*[position() gt count($core.elem/child::mei:*)]">
+                    <diff type="missing.elem" missing.in="core" existing.id="{@xml:id}"/>
+                </xsl:for-each>                
+                
+            </xsl:when>
+            <!-- core has more elements than source -->
+            <xsl:otherwise>
+                
+                <xsl:for-each select="$source.elem/child::mei:*">
+                    <xsl:variable name="pos" select="position()" as="xs:integer"/>
+                    <xsl:choose>
+                        <xsl:when test="local-name($core.elem/child::mei:*[$pos]) = local-name($source.elem/child::mei:*[$pos])">
+                            <xsl:sequence select="local:compareElements($source.elem/child::mei:*[$pos],$core.elem/child::mei:*[$pos])"/>        
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <diff type="different.elem" source.name="{local-name($source.elem/child::mei:*[$pos])}" source.elem.id="{$source.elem/child::mei:*[$pos]/@xml:id}" core.name="{local-name($core.elem/child::mei:*[$pos])}" core.elem.id="{$core.elem/child::mei:*[$pos]/@xml:id}"/>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:for-each>
+                
+                <xsl:for-each select="$core.elem/child::mei:*[position() gt count($source.elem/child::mei:*)]">
+                    <diff type="missing.elem" missing.in="source" existing.id="{@xml:id}"/>
+                </xsl:for-each>
+                
+            </xsl:otherwise>
+        </xsl:choose>        
+    </xsl:function>
+    
     <!-- compares to staff elements that have been cleaned from <apps> and identifies their differences -->
     <xsl:function name="local:compareStaffProfile" as="node()*">
         <xsl:param name="source.profile" as="node()"/>
@@ -1423,6 +1491,12 @@
         <xsl:if test="not($coreThereAlready)">
             <xsl:message terminate="yes" select="'There is no core file for mov' || $mov.n || ' yet. Please use setupNewCore.xsl first. ' || concat($basePath,'/14%20reCored/core_mov',$mov.n,'.xml')"/>
         </xsl:if>
+        
+        <!-- basic checks: -->
+        <xsl:if test="//mei:clef[not(@tstamp)]">
+            <xsl:message select="'warning: the following clefs have no @tstamp: ' || string-join(//mei:clef[not(@tstamp)]/@xml:id,', ')"/>
+        </xsl:if>
+        
         
         <!-- in source.preComp, a file almost similar to a core based on the source is generated. -->
         <xsl:variable name="source.preComp">
@@ -1776,7 +1850,7 @@
                                             <xsl:copy-of select="$better.diff"/>
                                         </xsl:when>
                                         <xsl:otherwise>
-                                            <diff type="different.pitch" staff="{$diff/@staff}" tstamp="{$diff/@tstamp}" source.pitch="{$diff/@pitch}" source.pnum="{$diff/@pnum}" core.pitch="{$core.diff/@pitch}" core.pnum="{$core.diff/@pnum}" source.id="{$diff/@existing.id}" core.id="{$core.diff/@existing.id}"/>
+                                            <diff type="different.pitch" staff="{$diff/@staff}" tstamp="{$diff/@tstamp}" source.pitch="{$diff/@pitch}" source.pnum="{$diff/@pnum}" core.pitch="{$core.diff/@pitch}" core.pnum="{$core.diff/@pnum}" source.elem.id="{$diff/@existing.id}" core.elem.id="{$core.diff/@existing.id}"/>
                                         </xsl:otherwise>
                                     </xsl:choose>
                                     
@@ -1946,93 +2020,126 @@
                 <xsl:variable name="source.staff" select="$source.prep//mei:staff[@xml:id = $staff.id.source]" as="node()"/>
                 <xsl:variable name="local.diff.groups" select="$diff.groups//staff[@xml:id = ($staff.id,$staff.id.source)]/diffGroup" as="node()+"/>
                 
-                <!-- element needs to be copied -->
+                <!-- staff needs to be copied prior to further processing -->
                 <xsl:copy>
                     <xsl:apply-templates select="@*" mode="#current"/>
                     
+                    <!-- identify which layers are affected -->
+                    <xsl:variable name="affected.layers" as="xs:string*">
+                        <xsl:variable name="affected.layers.total" as="xs:string*">
+                            <xsl:for-each select="$local.diff.groups//diff">
+                                <xsl:variable name="current.diff" select="." as="node()"/>
+                                <xsl:if test="$source.staff//mei:*[@xml:id = $current.diff/@source.elem.id]">
+                                    <xsl:variable name="source.elem.layer" select="$source.staff//mei:*[@xml:id = $current.diff/@source.elem.id]/ancestor::mei:layer" as="node()"/>
+                                    <xsl:value-of select="if($source.elem.layer/@n) then($source.elem.layer/@n) else('1')"/>
+                                </xsl:if>
+                                <xsl:if test="$core.staff//mei:*[@xml:id = $current.diff/@core.elem.id]">
+                                    <xsl:variable name="core.elem.layer" select="$core.staff//mei:*[@xml:id = $current.diff/@core.elem.id]/ancestor::mei:layer" as="node()"/>
+                                    <xsl:value-of select="if($core.elem.layer/@n) then($core.elem.layer/@n) else('1')"/>
+                                </xsl:if>
+                            </xsl:for-each>
+                        </xsl:variable>
+                        <xsl:value-of select="distinct-values($affected.layers.total)"/>
+                    </xsl:variable>
+                    
+                    <!-- debug: -->
+                    <!--<xsl:message select="$staff.id || ': ' || string-join($affected.layers,', ')"/>-->
+                    
                     <!-- determine how many layers are involved -->
                     <xsl:choose>
-                        <xsl:when test="count($core.staff/mei:layer) = 1 and count($source.staff/mei:layer) = 1">
+                        <xsl:when test="count($source.staff/mei:layer) = 1 and count($core.staff/mei:layer) = 1">
                             
                             <!-- "copy" the single child layer, together with its attributes -->
                             <layer xmlns="http://www.music-encoding.org/ns/mei">
                                 <xsl:apply-templates select="child::mei:layer/@*" mode="#current"/>
                                 
-                                <!--<!-\- deal with the content that precedes the first variant section -\->
-                                <xsl:apply-templates select="child::mei:layer/node()" mode="get.by.tstamps">
-                                    <xsl:with-param name="before.tstamp" select="number($local.diff.groups[1]/@tstamp.first)" as="xs:double" tunnel="yes"/>
-                                </xsl:apply-templates>     
-                                
-                                <!-\- deal with each variant section and the content that follows it, but precedes the next variant section -\->
-                                <xsl:for-each select="$local.diff.groups">
-                                    <xsl:variable name="current.diff.group" select="." as="node()"/>
-                                    <xsl:variable name="pos" select="position()" as="xs:integer"/>
-                                    
-                                    <xsl:if test="$staff.id = 'core_mov6_measure94_s5'">
-                                        <xsl:message select="'iteration ' || $pos"/>
-                                        <xsl:message select="$current.diff.group"/>
-                                    </xsl:if>
-                                    
-                                    <!-\- address the variant section -\->
-                                    <xsl:apply-templates select="$core.staff/child::mei:layer/node()" mode="get.by.tstamps">
-                                        <xsl:with-param name="local.diff.groups" select="$current.diff.group" as="node()" tunnel="yes"/>
-                                        <xsl:with-param name="source.staff" select="$source.staff" as="node()" tunnel="yes"/>
-                                    </xsl:apply-templates>   
-                                    
-                                    <!-\- deal with the material following the variant section -\->
-                                    <xsl:choose>
-                                        <!-\- when there are following variant sections left -\->
-                                        <xsl:when test="$pos lt count($local.diff.groups)">
-                                            <xsl:apply-templates select="$core.staff/child::mei:layer/node()" mode="get.by.tstamps">
-                                                <xsl:with-param name="after.tstamp" select="number($current.diff.group/@tstamp.last)" as="xs:double" tunnel="yes"/>
-                                                <xsl:with-param name="before.tstamp" select="number($local.diff.groups[$pos + 1]/@tstamp.first)" as="xs:double" tunnel="yes"/>
-                                            </xsl:apply-templates>  
-                                        </xsl:when>
-                                        <!-\- when this is the last variant section, take all material following it -\->
-                                        <xsl:otherwise>
-                                            <xsl:apply-templates select="$core.staff/child::mei:layer/node()" mode="get.by.tstamps">
-                                                <xsl:with-param name="after.tstamp" select="number($current.diff.group/@tstamp.last)" as="xs:double" tunnel="yes"/>
-                                            </xsl:apply-templates>  
-                                        </xsl:otherwise>
-                                    </xsl:choose>
-                                </xsl:for-each>-->
-                                
-                                
                                 <xsl:apply-templates select="child::mei:layer/node()" mode="get.by.tstamps">
                                     <xsl:with-param name="local.diff.groups" select="$local.diff.groups" as="node()+" tunnel="yes"/>
                                     <xsl:with-param name="source.staff" select="$source.staff" as="node()" tunnel="yes"/>
+                                    <xsl:with-param name="affected.layers" select="$affected.layers" as="xs:string*" tunnel="yes"/>
                                 </xsl:apply-templates>    
-                                
-                                
-                            <!--
-                                <xsl:choose>
-                                    
-                                    <!-\- if there is only one local.diff.group -\->
-                                    <xsl:when test="count($local.diff.groups) = 1">
-                                        
-                                        
-                                            
-                                            <xsl:apply-templates select="child::mei:layer/node()" mode="get.by.tstamps">
-                                                <xsl:with-param name="local.diff.groups" select="$local.diff.groups" as="node()+" tunnel="yes"/>
-                                                <xsl:with-param name="source.staff" select="$source.staff" as="node()" tunnel="yes"/>
-                                            </xsl:apply-templates>    
-                                            
-                                        
-                                    </xsl:when>
-                                    <!-\- otherwise separation by tstamp is more complicated -\->
-                                    <xsl:otherwise>
-                                        
-                                        
-                                        <xsl:message select="'Need to resolve ' || count($local.diff.groups) || ' diff ranges for ' || $staff.id"/>    
-                                    </xsl:otherwise>
-                                </xsl:choose>-->
                                 
                             </layer>
                             
                         </xsl:when>
                         <xsl:otherwise>
                             <!-- resolving of layers required! -->
-                            <xsl:message select="'need to deal with multiple layers when creating app(s) for ' || $staff.id"/>
+                            
+                            <xsl:choose>
+                                <!-- the number of layers isn't the same in core and source -->
+                                <xsl:when test="count($core.staff/mei:layer) != count($source.staff/mei:layer)">
+                                    <xsl:message select="'different number of layers to be resolved for ' || $staff.id || '. core: ' || count($core.staff/mei:layer) || ', source: ' || count($source.staff/mei:layer) || ', affected: ' || string-join($affected.layers,', ')"/>
+                                    
+                                    <xsl:variable name="meter.count" select="preceding::mei:*[@meter.count][1]/@meter.count" as="xs:string"/>
+                                    <xsl:message select="'@meter.count: ' || $meter.count"/>
+                                    <xsl:variable name="stretches" select="every $diffGroup in $local.diff.groups//diffGroup satisfies ($diffGroup/@tstamp.first = '1' and number($diffGroup/@tstamp.last) ge number($meter.count))" as="xs:boolean"></xsl:variable>
+                                    <xsl:message select="'stretches: ' || $stretches || ', layers:' || string-join($affected.layers,', ') || ', diffGroups: ' || count($local.diff.groups)"/>
+                                    
+                                    <!-- todo: check if there is just one diff.group, which stretches across the full measure -->
+                                    <!--<xsl:choose>
+                                        <xsl:when test=""></xsl:when>
+                                    </xsl:choose>-->
+                                    
+                                </xsl:when>
+                                
+                                <!-- more than one layer each, but the number is the same -->
+                                <xsl:when test="every $diff in $local.diff.groups//diff satisfies $diff/@type = ('att.value','att.missing','different.pitch')">
+                                    
+                                    <xsl:for-each select="child::mei:layer">
+                                        <xsl:choose>
+                                            <xsl:when test="@n = $affected.layers">
+                                                
+                                                <xsl:apply-templates select="." mode="get.by.tstamps">
+                                                    <xsl:with-param name="local.diff.groups" select="$local.diff.groups" as="node()+" tunnel="yes"/>
+                                                    <xsl:with-param name="source.staff" select="$source.staff" as="node()" tunnel="yes"/>
+                                                    <xsl:with-param name="affected.layers" select="$affected.layers" as="xs:string*" tunnel="yes"/>
+                                                </xsl:apply-templates>
+                                                
+                                            </xsl:when>
+                                            <xsl:otherwise>
+                                                <xsl:apply-templates select="." mode="#current"/>
+                                            </xsl:otherwise>
+                                        </xsl:choose>
+                                    </xsl:for-each>
+                                    
+                                    <!--<xsl:choose>
+                                        <!-\- all differing elements are on the same layer(s) -\->
+                                        <xsl:when test="count($affected.layers) = 1">
+                                            
+                                              original place for for-each…
+                                              
+                                        </xsl:when>
+                                        <!-\- differences are found between elements on different layers -\->
+                                        <xsl:otherwise>
+                                            <xsl:message select="'differences between elements on different layers are found in ' || $staff.id"/>
+                                        </xsl:otherwise>
+                                    </xsl:choose>-->
+                                    
+                                </xsl:when>
+                                
+                                <!-- additional element(s) -->
+                                <xsl:otherwise>
+                                    <xsl:variable name="meter.count" select="preceding::mei:*[@meter.count][1]/@meter.count" as="xs:string"/>
+                                    <xsl:variable name="stretches" select="every $diffGroup in $local.diff.groups//diffGroup satisfies ($diffGroup/@tstamp.first = '1' and number($diffGroup/@tstamp.last) ge number($meter.count))" as="xs:boolean"></xsl:variable>
+                                    
+                                    <xsl:for-each select="$core.staff/mei:layer">
+                                        
+                                        <xsl:variable name="current.core.layer" select="." as="node()"/>
+                                        
+                                        <xsl:for-each select="$source.staff/mei:layer">
+                                            <xsl:variable name="current.source.layer" select="." as="node()"/>
+                                            
+                                            <xsl:message select="$core.staff/@xml:id || ': differences between core:layer' || $current.core.layer/@n || ' and source:layer' || $current.source.layer/@n || ': ' || count(local:compareElements($current.source.layer,$current.core.layer)/descendant-or-self::diff) || ' (' || ((count($current.core.layer//mei:*) + count($current.source.layer//mei:*)) div 2) || ')'"/>
+                                                                                        
+                                        </xsl:for-each>
+                                        
+                                    </xsl:for-each>
+                                    
+                                    
+                                    <!--<xsl:message select="'resolving of layers for ' || $staff.id || ' is likely to get more complicated. Dealing with ' || string-join(distinct-values($local.diff.groups//diff/@type),', ') || (if($local.diff.groups//diff[@type='missing.elem']) then(' (' || string-join($local.diff.groups//@elem.name,', ') || ') ') else()) || ' on layer(s) ' || string-join($affected.layers,', ')"/>-->        
+                                </xsl:otherwise>
+                            </xsl:choose>
+                            
                         </xsl:otherwise>
                     </xsl:choose>
                     
@@ -2237,6 +2344,7 @@
         <xsl:param name="after.tstamp" as="xs:double?" tunnel="yes" required="no"/>
         <xsl:param name="local.diff.groups" as="node()*" tunnel="yes" required="no"/>
         <xsl:param name="source.staff" as="node()?" tunnel="yes" required="no"/>
+        <xsl:param name="affected.layers" as="xs:string*" tunnel="yes" required="yes"/>
         
         <xsl:variable name="tstamp" select="number(@tstamp)" as="xs:double"/>
         
@@ -2256,12 +2364,11 @@
             </xsl:choose>
         </xsl:variable>
         
-        
         <xsl:choose>
-            <xsl:when test="exists($local.diff.groups) and count($local.diff.groups) ge 1">
-                
+            <!-- no local.diff.group available -->
+            <xsl:when test="not(exists($local.diff.groups)) or count($local.diff.groups) = 0">
+                <xsl:next-match/>
             </xsl:when>
-            
             
             <!-- when a range for tstamps is included -->
             <xsl:when test="$from.tstamp and $to.tstamp">
@@ -2306,39 +2413,57 @@
     </xsl:template>
     
     <!-- container elements which have no tstamp on their own, like beams and tuplets -->
-    <xsl:template match="mei:*[not(@tstamp) and child::mei:*/@tstamp]" mode="get.by.tstamps">
+    <xsl:template match="mei:*[not(@tstamp) and descendant::mei:*/@tstamp]" mode="get.by.tstamps">
         <xsl:param name="local.diff.groups" as="node()*" tunnel="yes" required="no"/>
         <xsl:param name="source.staff" as="node()?" tunnel="yes"/>
+        <xsl:param name="affected.layers" as="xs:string*" tunnel="yes" required="yes"/>
         
-        <xsl:variable name="lowest.contained.tstamp" select="min(child::mei:*[@tstamp]/number(@tstamp))" as="xs:double"/>
-        <xsl:variable name="highest.contained.tstamp" select="max(child::mei:*[@tstamp]/number(@tstamp))" as="xs:double"/>
-        <xsl:variable name="contained.tstamps" select="child::mei:*[@tstamp]/number(@tstamp)" as="xs:double+"/>
+        <xsl:variable name="current.elem" select="." as="node()"/>
+        <xsl:variable name="lowest.contained.tstamp" select="min(descendant::mei:*[@tstamp]/number(@tstamp))" as="xs:double"/>
+        <xsl:variable name="highest.contained.tstamp" select="max(descendant::mei:*[@tstamp]/number(@tstamp))" as="xs:double"/>
+        <xsl:variable name="contained.tstamps" select="descendant::mei:*[@tstamp]/number(@tstamp)" as="xs:double+"/>
         
         <xsl:variable name="sources.so.far" select="if(ancestor::mei:rdg) then(tokenize(replace(ancestor::mei:rdg[1]/@source,'#',''),' ')) else($all.sources.so.far)" as="xs:string+"/>
         
         <xsl:choose>
+            <!-- when there are no diffs, just copy -->
             <xsl:when test="not(exists($local.diff.groups))">
-                <xsl:if test="ancestor::mei:staff[@xml:id = 'core_mov6_measure94_s5']">
-                    <xsl:message select="'kein diff.groups'"></xsl:message>
-                </xsl:if>
                 <xsl:next-match/>
             </xsl:when>
             
-            <!-- when there is only one diff in this measure -->
-            <xsl:when test="count($local.diff.groups) = 1">
+            <!-- when there is one or more diffs in this measure -->
+            <xsl:otherwise>
                 
-                <xsl:variable name="diff.first.tstamp" select="number(($local.diff.groups//@tstamp.first)[1])" as="xs:double"/>
-                <xsl:variable name="diff.last.tstamp" select="number(($local.diff.groups//@tstamp.last)[1])" as="xs:double"/>
+                <!-- get a list of all tstamps that fall into the range of a diffGroup -->
+                <xsl:variable name="affected.tstamps" as="xs:double*">
+                    <xsl:for-each select="$contained.tstamps">
+                        <xsl:variable name="current.tstamp" select="." as="xs:double"/>
+                        <xsl:if test="some $diffGroup in $local.diff.groups satisfies ($current.tstamp ge number($diffGroup/@tstamp.first) and $current.tstamp le number($diffGroup/@tstamp.last))">
+                            <xsl:value-of select="$current.tstamp"/>
+                        </xsl:if>
+                    </xsl:for-each>
+                </xsl:variable>
                 
-                <xsl:if test="ancestor::mei:staff[@xml:id = 'core_mov6_measure94_s5']">
-                    <xsl:message select="'ein diff.group, von ' || $diff.first.tstamp || ' bis ' || $diff.last.tstamp"/>
-                </xsl:if>
+                <!-- identify which diffGroups are relevant for this element -->
+                <xsl:variable name="relevant.diff.groups" as="node()*">
+                    <xsl:for-each select="$local.diff.groups">
+                        <xsl:variable name="current.diff.group" select="." as="node()"/>
+                        <xsl:if test="number($current.diff.group/@tstamp.first) = $affected.tstamps and number($current.diff.group/@tstamp.last) = $affected.tstamps">
+                            <xsl:sequence select="$current.diff.group"/>
+                        </xsl:if>
+                        <!-- check if a diffGroup extends more than this container element, which should not happen… -->
+                        <xsl:if test="number($current.diff.group/@tstamp.first) = $affected.tstamps and not(number($current.diff.group/@tstamp.last) = $affected.tstamps)">
+                            <xsl:message select="'incorrect nesting to be expected for ' || local-name() || ' ' || @xml:id || '. diffGroup:'"/>
+                            <xsl:message terminate="yes" select="$current.diff.group"/>
+                        </xsl:if>
+                        <xsl:if test="not(number($current.diff.group/@tstamp.first) = $affected.tstamps) and number($current.diff.group/@tstamp.last) = $affected.tstamps">
+                            <xsl:message select="'incorrect nesting to be expected for ' || local-name() || ' ' || @xml:id || '. diffGroup:'"/>
+                            <xsl:message terminate="yes" select="$current.diff.group"/>
+                        </xsl:if>
+                    </xsl:for-each>
+                </xsl:variable>
                 
-                <xsl:variable name="preceding.content" select="some $tstamp in $contained.tstamps satisfies ($tstamp lt $diff.first.tstamp)" as="xs:boolean"/>
-                <xsl:variable name="following.content" select="some $tstamp in $contained.tstamps satisfies ($tstamp gt $diff.last.tstamp)" as="xs:boolean"/>
-                <xsl:variable name="affected.by.diff" select="some $tstamp in $contained.tstamps satisfies($tstamp ge $diff.first.tstamp and $tstamp le $diff.last.tstamp)" as="xs:boolean"/>
-                
-                <!--<xsl:message select="ancestor::mei:staff/@xml:id || ': resolving a ' || local-name(.) || ' from lowest tstamp ' || $lowest.contained.tstamp || ' to highest tstamp ' || $highest.contained.tstamp || '. diff between ' || $diff.first.tstamp || ' and ' || $diff.last.tstamp"/>-->
+                <xsl:variable name="affected.by.diff" select="count($affected.tstamps) gt 0" as="xs:boolean"/>
                 
                 <xsl:choose>
                     <!-- when there is no diff for the range of tstamps that this element contains -->
@@ -2347,67 +2472,84 @@
                     </xsl:when>
                     
                     <!-- when the diff range is fully contained in this container -->
-                    <xsl:when test="$lowest.contained.tstamp le $diff.first.tstamp and $highest.contained.tstamp ge $diff.last.tstamp">
+                    <xsl:otherwise>
+                        <!-- copy container and its attributes -->
                         <xsl:copy>
                             <xsl:apply-templates select="@*" mode="#current"/>
-                            <xsl:apply-templates select="node()" mode="#current">
-                                <xsl:with-param name="before.tstamp" select="$diff.first.tstamp" as="xs:double" tunnel="yes"/>
-                            </xsl:apply-templates>
                             
-                            <xsl:variable name="first.rdg.id" select="'c'||uuid:randomUUID()" as="xs:string"/>
-                            <xsl:variable name="second.rdg.id" select="'c'||uuid:randomUUID()" as="xs:string"/>
-                            <xsl:variable name="annot.id" select="'c'||uuid:randomUUID()" as="xs:string"/>
-                            
-                            <xsl:variable name="is.beamed" select="local-name(.) = 'beam' or ancestor::mei:beam" as="xs:boolean"/>
-                            
-                            <app xmlns="http://www.music-encoding.org/ns/mei" xml:id="{'a'||uuid:randomUUID()}">
-                                <rdg xml:id="{$first.rdg.id}" source="#{string-join($sources.so.far,' #')}">
-                                    <xsl:apply-templates select="node()" mode="#current">
-                                        <xsl:with-param name="from.tstamp" select="number($local.diff.groups[1]/@tstamp.first)" as="xs:double" tunnel="yes"/>
-                                        <xsl:with-param name="to.tstamp" select="number($local.diff.groups[1]/@tstamp.last)" as="xs:double" tunnel="yes"/>
-                                    </xsl:apply-templates>
-                                </rdg>
-                                <rdg xml:id="{$second.rdg.id}" source="#{$source.id}">
-                                    
-                                    <xsl:apply-templates select="$source.staff/mei:layer/child::mei:*" mode="adjustMaterial">
-                                        <xsl:with-param name="from.tstamp" select="$diff.first.tstamp" as="xs:double" tunnel="yes"/>
-                                        <xsl:with-param name="to.tstamp" select="$diff.last.tstamp" as="xs:double" tunnel="yes"/>
-                                        <xsl:with-param name="strip.beams" select="$is.beamed" as="xs:boolean" tunnel="yes"/>
-                                    </xsl:apply-templates>
-                                    
-                                </rdg>
-                            </app>
-                            <annot xmlns="http://www.music-encoding.org/ns/mei" xml:id="{$annot.id}" type="diff" corresp="#{$source.id} #{string-join($sources.so.far,' #')}" plist="#{$first.rdg.id || ' #' || $second.rdg.id}">
-                                <xsl:if test="count(distinct-values($local.diff.groups//diff/@type)) = 1 and $local.diff.groups//diff[1]/@type = 'att.value' and $local.diff.groups//diff[1]/@att.name = 'artic'">
-                                    <p>
-                                        Different articulation in source. <xsl:value-of select="string-join($sources.so.far,', ')"/> read 
-                                        <xsl:value-of select="$local.diff.groups//diff[1]/@core.value"/>, while <xsl:value-of select="$source.id"/>
-                                        reads <xsl:value-of select="$local.diff.groups//diff[1]/@source.value"/>.
-                                    </p>
-                                </xsl:if>
-                                <!-- debug: keep the diff results -->
-                                <xsl:copy-of select="$local.diff.groups"/>    
+                            <!-- iterate over all diffGroups -->
+                            <xsl:for-each select="$relevant.diff.groups">
+                                <xsl:variable name="current.diff.group" select="." as="node()"/>
+                                <xsl:variable name="position" select="position()" as="xs:integer"/>
                                 
-                            </annot>
+                                <!-- get first elements only prior to first diffGroup -->
+                                <xsl:if test="$position = 1">
+                                    <xsl:apply-templates select="$current.elem/node()" mode="#current">
+                                        <xsl:with-param name="before.tstamp" select="number($current.diff.group/@tstamp.first)" as="xs:double" tunnel="yes"/>
+                                    </xsl:apply-templates>
+                                </xsl:if>
+                                
+                                <xsl:variable name="first.rdg.id" select="'c'||uuid:randomUUID()" as="xs:string"/>
+                                <xsl:variable name="second.rdg.id" select="'c'||uuid:randomUUID()" as="xs:string"/>
+                                <xsl:variable name="annot.id" select="'c'||uuid:randomUUID()" as="xs:string"/>
+                                
+                                <!-- determine if content is already beamed -->
+                                <xsl:variable name="is.beamed" select="local-name($current.elem) = 'beam' or ancestor::mei:beam" as="xs:boolean"/>
+                                
+                                <app xmlns="http://www.music-encoding.org/ns/mei" xml:id="{'a'||uuid:randomUUID()}">
+                                    <rdg xml:id="{$first.rdg.id}" source="#{string-join($sources.so.far,' #')}">
+                                        <xsl:apply-templates select="$current.elem/node()" mode="#current">
+                                            <xsl:with-param name="from.tstamp" select="number($current.diff.group/@tstamp.first)" as="xs:double" tunnel="yes"/>
+                                            <xsl:with-param name="to.tstamp" select="number($current.diff.group/@tstamp.last)" as="xs:double" tunnel="yes"/>
+                                        </xsl:apply-templates>
+                                    </rdg>
+                                    <rdg xml:id="{$second.rdg.id}" source="#{$source.id}">
+                                        
+                                        <xsl:apply-templates select="$source.staff/mei:layer/child::mei:*" mode="adjustMaterial">
+                                            <xsl:with-param name="from.tstamp" select="number($current.diff.group/@tstamp.first)" as="xs:double" tunnel="yes"/>
+                                            <xsl:with-param name="to.tstamp" select="number($current.diff.group/@tstamp.last)" as="xs:double" tunnel="yes"/>
+                                            <xsl:with-param name="strip.beams" select="$is.beamed" as="xs:boolean" tunnel="yes"/>
+                                        </xsl:apply-templates>
+                                        
+                                    </rdg>
+                                </app>
+                                <annot xmlns="http://www.music-encoding.org/ns/mei" xml:id="{$annot.id}" type="diff" corresp="#{$source.id} #{string-join($sources.so.far,' #')}" plist="#{$first.rdg.id || ' #' || $second.rdg.id}">
+                                    <xsl:if test="count(distinct-values($current.diff.group//diff/@type)) = 1 and $current.diff.group//diff[1]/@type = 'att.value' and $current.diff.group//diff[1]/@att.name = 'artic'">
+                                        <p>
+                                            Different articulation in source. <xsl:value-of select="string-join($sources.so.far,', ')"/> read 
+                                            <xsl:value-of select="$current.diff.group//diff[1]/@core.value"/>, while <xsl:value-of select="$source.id"/>
+                                            reads <xsl:value-of select="$current.diff.group//diff[1]/@source.value"/>.
+                                        </p>
+                                    </xsl:if>
+                                    <!-- debug: keep the diff results -->
+                                    <xsl:copy-of select="$current.diff.group"/>    
+                                    
+                                </annot>
+                                
+                                <xsl:choose>
+                                    <!-- when another diffGroup follows, pick only content up to that -->
+                                    <xsl:when test="$position lt count($relevant.diff.groups)">
+                                        <xsl:apply-templates select="$current.elem/node()" mode="#current">
+                                            <xsl:with-param name="after.tstamp" select="number($current.diff.group/@tstamp.last)" as="xs:double" tunnel="yes"/>
+                                            <xsl:with-param name="before.tstamp" select="number($relevant.diff.groups[($position + 1)]/@tstamp.first)" as="xs:double" tunnel="yes"/>
+                                        </xsl:apply-templates>
+                                    </xsl:when>
+                                    <!-- deal with everything that follows -->
+                                    <xsl:otherwise>
+                                        <xsl:apply-templates select="$current.elem/node()" mode="#current">
+                                            <xsl:with-param name="after.tstamp" select="number($current.diff.group/@tstamp.last)" as="xs:double" tunnel="yes"/>
+                                        </xsl:apply-templates>
+                                    </xsl:otherwise>
+                                </xsl:choose>
+                                
+                                
+                                
+                            </xsl:for-each>
                             
-                            <xsl:apply-templates select="node()" mode="#current">
-                                <xsl:with-param name="after.tstamp" select="$diff.last.tstamp" as="xs:double" tunnel="yes"/>
-                            </xsl:apply-templates>
                         </xsl:copy>
-                    </xsl:when>
-                    <!-- diff range extends around both ends of this container -->
-                    <xsl:when test="$lowest.contained.tstamp ge $diff.first.tstamp and $highest.contained.tstamp le $diff.last.tstamp">
-                        
-                        <!-- todo: local container is smaller than diff range, that is <app><beam></beam></app> -->
-                        
-                        <xsl:message select="'uh oh!'"></xsl:message>
-                    </xsl:when>
+                    </xsl:otherwise>
                     
                 </xsl:choose>
-            </xsl:when>
-            <!-- when there are multiple diffs in this measure -->
-            <xsl:otherwise>
-                <!-- todo: widen scope of preceding solution here -->
             </xsl:otherwise>
         </xsl:choose>
         

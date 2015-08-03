@@ -60,6 +60,14 @@
             <xsl:message terminate="yes" select="'There is already a new core for mov' || $mov.n || '. Please use merge2Core.xsl instead.'"/>
         </xsl:if>
         
+        <!-- basic checks: -->
+        <xsl:if test="//mei:clef[not(@tstamp)]">
+            <xsl:message terminate="yes" select="'ERROR: the following clefs have no @tstamp: ' || string-join(//mei:clef[not(@tstamp)]/@xml:id,', ')"/>
+        </xsl:if>
+        <xsl:if test="//@artic[not(. = ('dot','stroke'))]">
+            <xsl:message terminate="no" select="'ERROR: @artic uses the following values: /' || string-join((distinct-values(//@artic)),'/, /') || '/, but only /dot/ and /stroke/ are supported'"/>
+        </xsl:if>
+        
         <xsl:variable name="coreDraft">
             <xsl:apply-templates mode="coreDraft"/>
         </xsl:variable>
@@ -179,6 +187,36 @@
             </change>
         </xsl:copy>
     </xsl:template>
+    
+    <!-- for the core, generate a tstamp for grace notes -->
+    <xsl:template match="mei:note[@grace and not(@tstamp)]" mode="coreDraft">
+        <xsl:variable name="tstampOffset" as="xs:double">
+            <xsl:call-template name="setGraceOffset">
+                <xsl:with-param name="note" select="."/>
+            </xsl:call-template>
+        </xsl:variable>
+        <xsl:copy>
+            <xsl:attribute name="tstamp" select="number(following::mei:note[@tstamp][1]/@tstamp) - $tstampOffset"/>
+            <xsl:apply-templates select="node() | @*" mode="#current"/>
+        </xsl:copy>
+    </xsl:template>
+    <xsl:template name="setGraceOffset" as="xs:double">
+        <xsl:param name="note" required="yes" as="node()"/>
+        <xsl:variable name="next" as="xs:double">
+            <xsl:choose>
+                <xsl:when test="$note/following::mei:note[1]/@grace">
+                    <xsl:call-template name="setGraceOffset">
+                        <xsl:with-param name="note" select="$note/following::mei:note[1]" as="node()"/>
+                    </xsl:call-template>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:value-of select="0"/>
+                </xsl:otherwise>
+            </xsl:choose>    
+        </xsl:variable>
+        <xsl:value-of select="$next + 0.001"/>        
+    </xsl:template>
+    
         
     <!-- source-specific information to be removed from the core -->
     <xsl:template match="@sameas" mode="coreDraft"/>
@@ -186,8 +224,11 @@
     <xsl:template match="@curvedir" mode="coreDraft"/>
     <xsl:template match="@place" mode="coreDraft"/>
     <xsl:template match="mei:facsimile" mode="coreDraft"/>
+    <xsl:template match="mei:pb" mode="coreDraft"/>
+    <xsl:template match="mei:sb" mode="coreDraft"/>
     <xsl:template match="@facs" mode="coreDraft"/>
     <xsl:template match="@corresp" mode="coreDraft"/>
+    <xsl:template match="mei:space/@n" mode="coreDraft"/>
     
     <!-- ***SOURCE*MODE*********************************** -->
     
