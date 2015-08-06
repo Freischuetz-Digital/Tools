@@ -361,6 +361,7 @@
         </xsl:choose>        
     </xsl:template>
     
+    <!-- this template is the main component for resolving events -->
     <xsl:template match="mei:staff" mode="compare.phase1">
         <xsl:param name="source.measure" as="node()" tunnel="yes"/>
         <xsl:param name="core.measure" as="node()" tunnel="yes"/>
@@ -479,7 +480,7 @@
                                 <!-- when there are differences in this layer -->
                                 <xsl:when test="exists($layer.comparison/descendant-or-self::diff)">
                                     
-                                    <xsl:message select="'   INFO: ' || $source.staff.raw/@xml:id || '/layer[' || $core.layer/@n || '] differs, without existing differences in the other sources. One layer only.'"/>
+                                    <xsl:message select="'   INFO: ' || $source.staff.raw/@xml:id || '/layer[' || $core.layer/@n || '] differs, without existing differences in the other sources.'"/>
                                     <xsl:variable name="layer.diffs" select="local:groupDiffs($layer.comparison[local-name() = 'diff'],$core.layer.profile,$source.layer.profile)"/>
                                     
                                     <xsl:variable name="first.diff.tstamp" select="number(($layer.diffs/descendant-or-self::diffGroup)[1]/@tstamp.first)" as="xs:double"/>
@@ -568,25 +569,15 @@
                 </xsl:copy>
             </xsl:when>
             
-            <!--<!-\- core and source both have one layer each, existing differences-\->
-            <xsl:when test="$core.staff.raw//mei:app and count($core.staff.raw/mei:layer) = 1 and count($source.staff.raw/mei:layer) = 1">
-                
-                <!-\- need to split up by ranges -\->
-                
-                <!-\-<xsl:if test=""/>-\->
-                <missing xml:id="{@xml:id}" case="apps justOneLayer"/>
-            </xsl:when>-->
-            
             <!-- core and source have the same number of layers, existing differences -->
             <xsl:when test="$core.staff.raw//mei:app and count($core.staff.raw/mei:layer) = count($source.staff.raw/mei:layer)">
-                
-                <xsl:message select="'   INFO: ' || $source.staff.raw/@xml:id || ' needs to be merged into existing apps'"/>
                 
                 <!-- need to split up by ranges -->
                 
                 <xsl:copy>
                     <xsl:apply-templates select="@*" mode="#current"/>
                     
+                    <!-- address layers individually -->
                     <xsl:for-each select="$core.staff.raw/mei:layer">
                         
                         <xsl:variable name="core.layer" select="." as="node()"/>
@@ -606,7 +597,7 @@
                         
                         <!-- debug -->
                         <xsl:if test="not($source.layer)">
-                            <xsl:message terminate="yes" select="'Error: The @n attributes for the layers in ' || $core.staff.raw/@xml:id || ' differ. No mei:layer/@n=' || $core.layer/@n || ' available in source ' || $source.id"/>
+                            <xsl:message terminate="yes" select="'ERROR: The @n attributes for the layers in ' || $core.staff.raw/@xml:id || ' differ. No mei:layer/@n=' || $core.layer/@n || ' available in source ' || $source.id"/>
                             <!-- if the above assumption is not correct and different @n need to be allowed, this whole processing needs to be revised. Maybe a manual resolution is more appropriate then? -->
                         </xsl:if>
                         
@@ -616,9 +607,11 @@
                             <xsl:variable name="layer.comparison" select="local:compareStaff($source.layer.profile,$core.layer.profile)" as="node()*"/>
                             
                             <xsl:choose>
+                                
                                 <!-- this layer needs to be split up into multiple ranges -->
                                 <xsl:when test="$core.layer//mei:app">
                                     
+                                    <!-- generate a separate comparison with the text version of each source -->
                                     <xsl:variable name="layer.source.comparisons" as="node()*">
                                         <xsl:for-each select="$all.sources.so.far">
                                             <xsl:variable name="current.source.id" select="." as="xs:string"/>
@@ -643,9 +636,12 @@
                                     
                                     <!-- identify matching source -->
                                     <xsl:variable name="matching.source.id" select="$layer.source.comparisons/descendant-or-self::source[count(.//diff) = 0]/@id" as="xs:string?"/>
+                                    
                                     <!-- debug message -->
                                     <xsl:if test="count($matching.source.id) gt 1">
-                                        <xsl:message terminate="yes" select="'Error: source ' || $source.id || ' matches the text of the following sources in '|| $core.staff.raw/@xml:id || ', even though they differ: ' || string-join($matching.source.id,', ')"/>
+                                        <xsl:message terminate="yes" select="'Error: source ' || $source.id || ' matches the text of the following sources in '|| $core.staff.raw/@xml:id || ', even though they should differ: ' || string-join($matching.source.id,', ')"/>
+                                        <!-- this error is probably incorrect, as multiple sources might share the same variant without causing a problem. 
+                                            Probably I only need to ensure that $matching.source.id takes the id of just the first matching source, and that's it… -->
                                     </xsl:if>
                                     
                                     <xsl:choose>
@@ -663,8 +659,9 @@
                                         
                                         <!-- more apps need to be generated -->
                                         <xsl:otherwise>
-                                            <xsl:message select="'INFO: more apps need to be generated for '  || $source.staff.raw/@xml:id || '/layer[' || $core.layer/@n || ']'"/>
+                                            <xsl:message select="'   INFO: more apps need to be generated for '  || $source.staff.raw/@xml:id || '/layer[' || $core.layer/@n || ']'"/>
                                             
+                                            <!-- get the id of the source with the smallest number of differences -->
                                             <xsl:variable name="closest.source.id" as="xs:string">
                                                 <xsl:variable name="sources.sorted" as="node()+">
                                                     <xsl:for-each select="$layer.source.comparisons/descendant-or-self::source">
@@ -675,117 +672,392 @@
                                                 <xsl:value-of select="$sources.sorted[1]/@id"/>
                                             </xsl:variable>
                                             
+                                            <xsl:message select="'      DETAIL: closest source is ' || $closest.source.id"/>
+                                            
+                                            <!-- get the raw text of the closest source -->
                                             <xsl:variable name="closest.rdg.layer.raw" as="node()">
                                                 <xsl:apply-templates select="$core.layer" mode="resolveApp">
                                                     <xsl:with-param name="source.id" select="$closest.source.id" as="xs:string" tunnel="yes"/>
                                                 </xsl:apply-templates>
                                             </xsl:variable>
+                                            
+                                            <!-- generate the comparison profile for the closest source -->
                                             <xsl:variable name="closest.rdg.layer.profile" as="node()">
                                                 <xsl:apply-templates select="$closest.rdg.layer.raw" mode="profiling.prep">
                                                     <xsl:with-param name="trans.semi" select="$trans.semi.core" tunnel="yes" as="xs:string?"/>
                                                 </xsl:apply-templates>
                                             </xsl:variable>
                                             
-                                            <xsl:variable name="closest.rdg.layer.diffs" select="local:groupDiffs($layer.source.comparisons/descendant-or-self::source[@id = $closest.source.id]//diff,$closest.rdg.layer.profile,$source.layer.profile)"/>
-                                            
-                                            
-                                            <xsl:message select="'closest source is ' || $closest.source.id"/>
-                                            
+                                            <!-- identify the ranges of apps existing in the core already -->
                                             <xsl:variable name="existing.ranges" as="node()+">
                                                 <xsl:for-each select="$core.layer//mei:app">
                                                     <range tstamp.first="{min(.//mei:*[@tstamp]/number(@tstamp))}" tstamp.last="{max(.//mei:*[@tstamp]/number(@tstamp))}"/>
                                                 </xsl:for-each>
                                             </xsl:variable>
                                             
-                                            <!-- decide if differences between current source and the closest existing source require new apps -->
+                                            <!-- calculate optimal grouping of diffs, based on existing apps -->
+                                            <xsl:variable name="closest.rdg.layer.diffs" select="local:groupDiffs($layer.source.comparisons/descendant-or-self::source[@id = $closest.source.id]//diff,$closest.rdg.layer.profile,$source.layer.profile,$existing.ranges)"/>
+                                            
+                                            
+                                            <!-- deal with area preceding the first existing app -->
+                                            <xsl:variable name="first.diff.tstamp" select="number(($existing.ranges/descendant-or-self::range)[1]/@tstamp.first)" as="xs:double"/>
                                             <xsl:choose>
-                                                
-                                                <!-- when all spotted diffs fit into the existing app boundaries -->
-                                                <xsl:when test="every $diffGroup in $closest.rdg.layer.diffs//diffGroup satisfies (
-                                                    some $range in $existing.ranges/descendant-or-self::range satisfies (
-                                                            $diffGroup/@tstamp.first = $range/@tstamp.first and
-                                                            $diffGroup/@tstamp.last = $range/@tstamp.last
-                                                        )
-                                                    )">
-                                                    
-                                                    <xsl:variable name="first.diff.tstamp" select="number(($closest.rdg.layer.diffs//diffGroup)[1]/@tstamp.first)" as="xs:double"/>
+                                                <!-- no spotted differences precede the first existing app -->
+                                                <xsl:when test="not($closest.rdg.layer.diffs//diffGroup/number(@tstamp.first) lt $first.diff.tstamp)">
                                                     
                                                     <xsl:apply-templates select="$core.layer/child::mei:*" mode="get.by.tstamps">
                                                         <xsl:with-param name="before.tstamp" select="$first.diff.tstamp" as="xs:double" tunnel="yes"/>
+                                                        <xsl:with-param name="matching.source.id" select="$closest.source.id" as="xs:string" tunnel="yes"/>
                                                         <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
                                                     </xsl:apply-templates>
                                                     
-                                                    <xsl:for-each select="$existing.ranges/descendant-or-self::range">
-                                                        <xsl:variable name="current.range" select="." as="node()"/>
+                                                </xsl:when>
+                                                
+                                                <!-- one or more diffs are spotted before the first existing app -->
+                                                <xsl:otherwise>
+                                                    <xsl:variable name="relevant.diffs" select="$closest.rdg.layer.diffs//diffGroup[number(@tstamp.first) lt $first.diff.tstamp]" as="node()+"/>
+                                                    
+                                                    <xsl:for-each select="$relevant.diffs">
+                                                        
+                                                        <xsl:variable name="current.diffGroup" select="." as="node()"/>
                                                         <xsl:variable name="current.pos" select="position()" as="xs:integer"/>
                                                         
-                                                        <xsl:variable name="current.diffGroup" select="$closest.rdg.layer.diffs//diffGroup[@tstamp.first = $current.range/@tstamp.first and @tstamp.last = $current.range/@tstamp.last]" as="node()?"/>
-                                                        <xsl:variable name="current.app" select="$core.layer//mei:app[min(.//mei:*[@tstamp]/number(@tstamp)) = $current.range/@tstamp.first]" as="node()"/>
+                                                        <xsl:message select="'      INFO: Inserting new app from tstamp ' || $current.diffGroup/@tstamp.first || ' to ' || $current.diffGroup/@tstamp.last"/>
                                                         
-                                                        <xsl:choose>
-                                                            <!-- the new source offers a new rdg for the current app -->
-                                                            <xsl:when test="exists($current.diffGroup)">
-                                                                
-                                                                <xsl:variable name="new.rdg.id" select="'c'||uuid:randomUUID()" as="xs:string"/>
-                                                                    
-                                                                <app xmlns="http://www.music-encoding.org/ns/mei">
-                                                                    <!-- copy existing app and rdg(s) -->
-                                                                    <xsl:apply-templates select="$current.app/@* | $current.app/mei:rdg" mode="#current"/>
-                                                                    
-                                                                    <rdg xmlns="http://www.music-encoding.org/ns/mei" xml:id="{$new.rdg.id}" source="#{$source.id}">
-                                                                        
-                                                                        <xsl:apply-templates select="$source.layer/child::mei:*" mode="get.by.tstamps">
-                                                                            <xsl:with-param name="from.tstamp" select="number($current.diffGroup/@tstamp.first)" as="xs:double" tunnel="yes"/>
-                                                                            <xsl:with-param name="to.tstamp" select="number($current.diffGroup/@tstamp.last)" as="xs:double" tunnel="yes"/>
-                                                                            <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
-                                                                        </xsl:apply-templates>
-                                                                        
-                                                                    </rdg>
-                                                                </app>
-                                                                
-                                                                <xsl:apply-templates select="$current.app/following-sibling::mei:annot[1]" mode="#current">
-                                                                    <xsl:with-param name="add.plist.entry" select="$new.rdg.id" tunnel="yes" as="xs:string"/>
+                                                        <xsl:variable name="first.rdg.id" select="'c'||uuid:randomUUID()" as="xs:string"/>
+                                                        <xsl:variable name="second.rdg.id" select="'c'||uuid:randomUUID()" as="xs:string"/>
+                                                        <xsl:variable name="annot.id" select="'c'||uuid:randomUUID()" as="xs:string"/>
+                                                        
+                                                        <app xmlns="http://www.music-encoding.org/ns/mei" xml:id="{'a'||uuid:randomUUID()}">
+                                                            <rdg xml:id="{$first.rdg.id}" source="#{string-join($all.sources.so.far,' #')}">
+                                                                <xsl:apply-templates select="$core.layer/child::mei:*" mode="get.by.tstamps">
+                                                                    <xsl:with-param name="from.tstamp" select="number($current.diffGroup/@tstamp.first)" as="xs:double" tunnel="yes"/>
+                                                                    <xsl:with-param name="to.tstamp" select="number($current.diffGroup/@tstamp.last)" as="xs:double" tunnel="yes"/>
                                                                 </xsl:apply-templates>
+                                                            </rdg>
+                                                            <rdg xml:id="{$second.rdg.id}" source="#{$source.id}">
                                                                 
-                                                            </xsl:when>
-                                                            <!-- the new source matches the closest source and shares this rdg -->
-                                                            <xsl:otherwise>
-                                                                <xsl:apply-templates select="$current.app" mode="#current">
-                                                                    <xsl:with-param name="matching.source" select="$closest.source.id" as="xs:string" tunnel="yes"/>
+                                                                <xsl:apply-templates select="$source.layer/child::mei:*" mode="get.by.tstamps">
+                                                                    <xsl:with-param name="from.tstamp" select="number($current.diffGroup/@tstamp.first)" as="xs:double" tunnel="yes"/>
+                                                                    <xsl:with-param name="to.tstamp" select="number($current.diffGroup/@tstamp.last)" as="xs:double" tunnel="yes"/>
                                                                     <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
                                                                 </xsl:apply-templates>
                                                                 
-                                                                <xsl:apply-templates select="$current.app/following-sibling::mei:annot[1]" mode="#current"/>
-                                                                
-                                                            </xsl:otherwise>
-                                                        </xsl:choose>
+                                                            </rdg>
+                                                        </app>
+                                                        <annot xmlns="http://www.music-encoding.org/ns/mei" xml:id="{$annot.id}" type="diff" corresp="#{$source.id} #{string-join($all.sources.so.far,' #')}" plist="#{$first.rdg.id || ' #' || $second.rdg.id}">
+                                                            <xsl:if test="count(distinct-values($current.diffGroup//diff/@type)) = 1 and $current.diffGroup//diff[1]/@type = 'att.value' and $current.diffGroup//diff[1]/@att.name = 'artic'">
+                                                                <p>
+                                                                    Different articulation in source. <xsl:value-of select="string-join($all.sources.so.far,', ')"/> read 
+                                                                    <xsl:value-of select="$current.diffGroup//diff[1]/@core.value"/>, while <xsl:value-of select="$source.id"/>
+                                                                    reads <xsl:value-of select="$current.diffGroup//diff[1]/@source.value"/>.
+                                                                </p>
+                                                            </xsl:if>
+                                                            <!-- debug: keep the diff results -->
+                                                            <xsl:copy-of select="$current.diffGroup"/>    
+                                                            
+                                                        </annot>
                                                         
                                                         <!-- deal with material following the diff -->
                                                         <xsl:choose>
                                                             <!-- when there are subsequent diffs -->
-                                                            <xsl:when test="$current.pos lt count($closest.rdg.layer.diffs//diffGroup)">
+                                                            <xsl:when test="$current.pos lt count($relevant.diffs)">
                                                                 <xsl:apply-templates select="$core.layer/child::mei:*" mode="get.by.tstamps">
                                                                     <xsl:with-param name="after.tstamp" select="number($current.diffGroup/@tstamp.last)" as="xs:double" tunnel="yes"/>
-                                                                    <xsl:with-param name="before.tstamp" select="number($closest.rdg.layer.diffs//diffGroup[($current.pos + 1)]/@tstamp.first)" as="xs:double" tunnel="yes"/>
+                                                                    <xsl:with-param name="before.tstamp" select="number($relevant.diffs[($current.pos + 1)]/@tstamp.first)" as="xs:double" tunnel="yes"/>
                                                                     <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                                    <xsl:with-param name="matching.source.id" select="$closest.source.id" as="xs:string" tunnel="yes"/>
                                                                 </xsl:apply-templates>
                                                             </xsl:when>
                                                             <!-- when this is the last diff -->
                                                             <xsl:otherwise>
                                                                 <xsl:apply-templates select="$core.layer/child::mei:*" mode="get.by.tstamps">
                                                                     <xsl:with-param name="after.tstamp" select="number($current.diffGroup/@tstamp.last)" as="xs:double" tunnel="yes"/>
+                                                                    <xsl:with-param name="before.tstamp" select="$first.diff.tstamp" as="xs:double" tunnel="yes"/>
                                                                     <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                                    <xsl:with-param name="matching.source.id" select="$closest.source.id" as="xs:string" tunnel="yes"/>
                                                                 </xsl:apply-templates>
                                                             </xsl:otherwise>
                                                         </xsl:choose>
                                                         
                                                     </xsl:for-each>
                                                     
-                                                </xsl:when>
-                                                <xsl:otherwise>
-                                                    <xsl:message select="'XXX: this situation requires a completely new app layout.'"></xsl:message>
                                                 </xsl:otherwise>
+                                                
                                             </xsl:choose>
+                                            
+                                            <!-- deal with all existing apps -->
+                                            <xsl:for-each select="$existing.ranges">
+                                                <xsl:variable name="current.range" select="." as="node()"/>
+                                                <xsl:variable name="current.pos" select="position()" as="xs:integer"/>
+                                                
+                                                <xsl:variable name="current.app" select="$core.layer//mei:app[min(.//mei:*[@tstamp]/number(@tstamp)) = $current.range/@tstamp.first]" as="node()"/>
+                                                
+                                                <!-- decide if a new diff is inside this app -->
+                                                <xsl:choose>
+                                                    
+                                                    <!-- no diff found for this app -->
+                                                    <xsl:when test="not($closest.rdg.layer.diffs//diffGroup[number(@tstamp.first) ge $current.range/number(@tstamp.first)
+                                                        and number(@tstamp.last) le $current.range/number(@tstamp.last)])">
+                                                        
+                                                        
+                                                        <xsl:apply-templates select="$current.app" mode="#current">
+                                                            <xsl:with-param name="matching.source" select="$closest.source.id" as="xs:string" tunnel="yes"/>
+                                                            <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                        </xsl:apply-templates>
+                                                        
+                                                        <xsl:apply-templates select="$current.app/following-sibling::mei:annot[1]" mode="#current"/>
+                                                        
+                                                    </xsl:when>
+                                                    
+                                                    <!-- a diff has exactly the same extension as the current app -> just create a new rdg -->
+                                                    <xsl:when test="$closest.rdg.layer.diffs//diffGroup[number(@tstamp.first) = $current.range/number(@tstamp.first)
+                                                        and number(@tstamp.last) = $current.range/number(@tstamp.last)]">
+                                                        
+                                                        <!-- todo: maybe it's better to ckeck all rdgs for better matches… -->
+                                                        
+                                                        <xsl:variable name="current.diffGroup" select="$closest.rdg.layer.diffs//diffGroup[number(@tstamp.first) = $current.range/number(@tstamp.first)
+                                                            and number(@tstamp.last) = $current.range/number(@tstamp.last)]" as="node()"/>
+                                                        <xsl:variable name="new.rdg.id" select="'c'||uuid:randomUUID()" as="xs:string"/>
+                                                        
+                                                        <xsl:message select="'      INFO: added new rdg for ' || $source.id || ' to app starting at tstamp ' || $current.range/@tstamp.first"/>
+                                                        
+                                                        <app xmlns="http://www.music-encoding.org/ns/mei">
+                                                            <!-- copy existing app and rdg(s) -->
+                                                            <xsl:apply-templates select="$current.app/@* | $current.app/mei:rdg" mode="#current"/>
+                                                            
+                                                            <rdg xmlns="http://www.music-encoding.org/ns/mei" xml:id="{$new.rdg.id}" source="#{$source.id}">
+                                                                
+                                                                <xsl:apply-templates select="$source.layer/child::mei:*" mode="get.by.tstamps">
+                                                                    <xsl:with-param name="from.tstamp" select="number($current.diffGroup/@tstamp.first)" as="xs:double" tunnel="yes"/>
+                                                                    <xsl:with-param name="to.tstamp" select="number($current.diffGroup/@tstamp.last)" as="xs:double" tunnel="yes"/>
+                                                                    <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                                </xsl:apply-templates>
+                                                                
+                                                            </rdg>
+                                                        </app>
+                                                        
+                                                        <xsl:apply-templates select="$current.app/following-sibling::mei:annot[1]" mode="#current">
+                                                            <xsl:with-param name="add.plist.entry" select="$new.rdg.id" tunnel="yes" as="xs:string"/>
+                                                        </xsl:apply-templates>
+                                                    </xsl:when>
+                                                    
+                                                    <!-- there must be one or more diffs, which require to split the app into different tstamp ranges -->
+                                                    <xsl:otherwise>
+                                                        <xsl:variable name="relevant.diffs" select="$closest.rdg.layer.diffs//diffGroup[number(@tstamp.first) ge $current.range/number(@tstamp.first)
+                                                            and number(@tstamp.last) le $current.range/number(@tstamp.last)]" as="node()+"/>
+                                                        
+                                                        <xsl:message select="'      HICCUP: app starting at tstamp ' || $current.range/@tstamp.first || ' needs to be revamped. Generated hiccup for manual resolution.'"/>
+                                                        
+                                                        <hiccup>
+                                                            <core source="#{string-join($all.sources.so.far,' #')}">
+                                                                <xsl:apply-templates select="$current.app" mode="#current"/>
+                                                            </core>
+                                                            <source id="{$source.id}">
+                                                                <xsl:apply-templates select="$source.layer/child::mei:*" mode="get.by.tstamps">
+                                                                    <xsl:with-param name="from.tstamp" select="number($current.range/@tstamp.first)" as="xs:double" tunnel="yes"/>
+                                                                    <xsl:with-param name="to.tstamp" select="number($current.range/@tstamp.last)" as="xs:double" tunnel="yes"/>
+                                                                    <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                                </xsl:apply-templates>
+                                                            </source>
+                                                            <protocol closest.source.id="{$closest.source.id}">
+                                                                <xsl:copy-of select="$relevant.diffs"/>
+                                                            </protocol>
+                                                        </hiccup>
+                                                        
+                                                        
+                                                    </xsl:otherwise>
+                                                    
+                                                    
+                                                </xsl:choose>
+                                                
+                                                <!-- deal with material between apps -->
+                                                <xsl:choose>
+                                                    <!-- there are subsequent apps -->
+                                                    <xsl:when test="$current.pos lt count($existing.ranges)">
+                                                        <xsl:variable name="next.start" select="number($existing.ranges[($current.pos + 1)]/@tstamp.first)" as="xs:double"/>
+                                                        
+                                                        <!-- get potential diffs for this section -->
+                                                        <xsl:variable name="relevant.diffs" select="$closest.rdg.layer.diffs//diffGroup[number(@tstamp.first) gt $current.range/number(@tstamp.last)
+                                                            and number(@tstamp.last) lt $next.start]" as="node()*"/>
+                                                        
+                                                        <xsl:choose>
+                                                            <!-- when there are no diffs in here, just include the relevant content -->
+                                                            <xsl:when test="count($relevant.diffs) = 0">
+                                                                <xsl:apply-templates select="$core.layer/child::mei:*" mode="get.by.tstamps">
+                                                                    <xsl:with-param name="after.tstamp" select="$current.range/number(@tstamp.last)" as="xs:double" tunnel="yes"/>
+                                                                    <xsl:with-param name="before.tstamp" select="$next.start" as="xs:double" tunnel="yes"/>
+                                                                    <xsl:with-param name="matching.source.id" select="$closest.source.id" as="xs:string" tunnel="yes"/>
+                                                                    <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                                </xsl:apply-templates>
+                                                            </xsl:when>
+                                                            <!-- there are diffs in here -->
+                                                            <xsl:otherwise>
+                                                                
+                                                                <xsl:for-each select="$relevant.diffs">
+                                                                    
+                                                                    <xsl:variable name="current.diffGroup" select="." as="node()"/>
+                                                                    <xsl:variable name="current.pos" select="position()" as="xs:integer"/>
+                                                                    
+                                                                    <xsl:message select="'      INFO: Inserting new app from tstamp ' || $current.diffGroup/@tstamp.first || ' to ' || $current.diffGroup/@tstamp.last"/>
+                                                                    
+                                                                    <xsl:variable name="first.rdg.id" select="'c'||uuid:randomUUID()" as="xs:string"/>
+                                                                    <xsl:variable name="second.rdg.id" select="'c'||uuid:randomUUID()" as="xs:string"/>
+                                                                    <xsl:variable name="annot.id" select="'c'||uuid:randomUUID()" as="xs:string"/>
+                                                                    
+                                                                    <app xmlns="http://www.music-encoding.org/ns/mei" xml:id="{'a'||uuid:randomUUID()}">
+                                                                        <rdg xml:id="{$first.rdg.id}" source="#{string-join($all.sources.so.far,' #')}">
+                                                                            <xsl:apply-templates select="$core.layer/child::mei:*" mode="get.by.tstamps">
+                                                                                <xsl:with-param name="from.tstamp" select="number($current.diffGroup/@tstamp.first)" as="xs:double" tunnel="yes"/>
+                                                                                <xsl:with-param name="to.tstamp" select="number($current.diffGroup/@tstamp.last)" as="xs:double" tunnel="yes"/>
+                                                                            </xsl:apply-templates>
+                                                                        </rdg>
+                                                                        <rdg xml:id="{$second.rdg.id}" source="#{$source.id}">
+                                                                            
+                                                                            <xsl:apply-templates select="$source.layer/child::mei:*" mode="get.by.tstamps">
+                                                                                <xsl:with-param name="from.tstamp" select="number($current.diffGroup/@tstamp.first)" as="xs:double" tunnel="yes"/>
+                                                                                <xsl:with-param name="to.tstamp" select="number($current.diffGroup/@tstamp.last)" as="xs:double" tunnel="yes"/>
+                                                                                <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                                            </xsl:apply-templates>
+                                                                            
+                                                                        </rdg>
+                                                                    </app>
+                                                                    <annot xmlns="http://www.music-encoding.org/ns/mei" xml:id="{$annot.id}" type="diff" corresp="#{$source.id} #{string-join($all.sources.so.far,' #')}" plist="#{$first.rdg.id || ' #' || $second.rdg.id}">
+                                                                        <xsl:if test="count(distinct-values($current.diffGroup//diff/@type)) = 1 and $current.diffGroup//diff[1]/@type = 'att.value' and $current.diffGroup//diff[1]/@att.name = 'artic'">
+                                                                            <p>
+                                                                                Different articulation in source. <xsl:value-of select="string-join($all.sources.so.far,', ')"/> read 
+                                                                                <xsl:value-of select="$current.diffGroup//diff[1]/@core.value"/>, while <xsl:value-of select="$source.id"/>
+                                                                                reads <xsl:value-of select="$current.diffGroup//diff[1]/@source.value"/>.
+                                                                            </p>
+                                                                        </xsl:if>
+                                                                        <!-- debug: keep the diff results -->
+                                                                        <xsl:copy-of select="$current.diffGroup"/>    
+                                                                        
+                                                                    </annot>
+                                                                    
+                                                                    <!-- deal with material following the diff -->
+                                                                    <xsl:choose>
+                                                                        <!-- when there are subsequent diffs -->
+                                                                        <xsl:when test="$current.pos lt count($relevant.diffs)">
+                                                                            <xsl:apply-templates select="$core.layer/child::mei:*" mode="get.by.tstamps">
+                                                                                <xsl:with-param name="after.tstamp" select="number($current.diffGroup/@tstamp.last)" as="xs:double" tunnel="yes"/>
+                                                                                <xsl:with-param name="before.tstamp" select="number($relevant.diffs[($current.pos + 1)]/@tstamp.first)" as="xs:double" tunnel="yes"/>
+                                                                                <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                                                <xsl:with-param name="matching.source.id" select="$closest.source.id" as="xs:string" tunnel="yes"/>
+                                                                            </xsl:apply-templates>
+                                                                        </xsl:when>
+                                                                        <!-- when this is the last diff -->
+                                                                        <xsl:otherwise>
+                                                                            <xsl:apply-templates select="$core.layer/child::mei:*" mode="get.by.tstamps">
+                                                                                <xsl:with-param name="after.tstamp" select="number($current.diffGroup/@tstamp.last)" as="xs:double" tunnel="yes"/>
+                                                                                <xsl:with-param name="before.tstamp" select="$next.start" as="xs:double" tunnel="yes"/>
+                                                                                <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                                                <xsl:with-param name="matching.source.id" select="$closest.source.id" as="xs:string" tunnel="yes"/>
+                                                                            </xsl:apply-templates>
+                                                                        </xsl:otherwise>
+                                                                    </xsl:choose>
+                                                                    
+                                                                </xsl:for-each>
+                                                                
+                                                                
+                                                            </xsl:otherwise>
+                                                            
+                                                        </xsl:choose>
+                                                        
+                                                    </xsl:when>
+                                                    <!-- this is the end of the layer, after the final app -->
+                                                    <xsl:otherwise>
+                                                        
+                                                        <!-- get potential diffs for this section -->
+                                                        <xsl:variable name="relevant.diffs" select="$closest.rdg.layer.diffs//diffGroup[number(@tstamp.first) gt $current.range/number(@tstamp.last)]" as="node()*"/>
+                                                        
+                                                        <xsl:choose>
+                                                            <!-- when there are no diffs in here, just include the relevant content -->
+                                                            <xsl:when test="count($relevant.diffs) = 0">
+                                                                <xsl:apply-templates select="$core.layer/child::mei:*" mode="get.by.tstamps">
+                                                                    <xsl:with-param name="after.tstamp" select="$current.range/number(@tstamp.last)" as="xs:double" tunnel="yes"/>
+                                                                    <xsl:with-param name="matching.source.id" select="$closest.source.id" as="xs:string" tunnel="yes"/>
+                                                                    <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                                </xsl:apply-templates>
+                                                            </xsl:when>
+                                                            <!-- there are diffs in here -->
+                                                            <xsl:otherwise>
+                                                                
+                                                                <xsl:for-each select="$relevant.diffs">
+                                                                    
+                                                                    <xsl:variable name="current.diffGroup" select="." as="node()"/>
+                                                                    <xsl:variable name="current.pos" select="position()" as="xs:integer"/>
+                                                                    
+                                                                    <xsl:message select="'      INFO: Inserting new app from tstamp ' || $current.diffGroup/@tstamp.first || ' to ' || $current.diffGroup/@tstamp.last"/>
+                                                                    
+                                                                    <xsl:variable name="first.rdg.id" select="'c'||uuid:randomUUID()" as="xs:string"/>
+                                                                    <xsl:variable name="second.rdg.id" select="'c'||uuid:randomUUID()" as="xs:string"/>
+                                                                    <xsl:variable name="annot.id" select="'c'||uuid:randomUUID()" as="xs:string"/>
+                                                                    
+                                                                    <app xmlns="http://www.music-encoding.org/ns/mei" xml:id="{'a'||uuid:randomUUID()}">
+                                                                        <rdg xml:id="{$first.rdg.id}" source="#{string-join($all.sources.so.far,' #')}">
+                                                                            <xsl:apply-templates select="$core.layer/child::mei:*" mode="get.by.tstamps">
+                                                                                <xsl:with-param name="from.tstamp" select="number($current.diffGroup/@tstamp.first)" as="xs:double" tunnel="yes"/>
+                                                                                <xsl:with-param name="to.tstamp" select="number($current.diffGroup/@tstamp.last)" as="xs:double" tunnel="yes"/>
+                                                                            </xsl:apply-templates>
+                                                                        </rdg>
+                                                                        <rdg xml:id="{$second.rdg.id}" source="#{$source.id}">
+                                                                            
+                                                                            <xsl:apply-templates select="$source.layer/child::mei:*" mode="get.by.tstamps">
+                                                                                <xsl:with-param name="from.tstamp" select="number($current.diffGroup/@tstamp.first)" as="xs:double" tunnel="yes"/>
+                                                                                <xsl:with-param name="to.tstamp" select="number($current.diffGroup/@tstamp.last)" as="xs:double" tunnel="yes"/>
+                                                                                <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                                            </xsl:apply-templates>
+                                                                            
+                                                                        </rdg>
+                                                                    </app>
+                                                                    <annot xmlns="http://www.music-encoding.org/ns/mei" xml:id="{$annot.id}" type="diff" corresp="#{$source.id} #{string-join($all.sources.so.far,' #')}" plist="#{$first.rdg.id || ' #' || $second.rdg.id}">
+                                                                        <xsl:if test="count(distinct-values($current.diffGroup//diff/@type)) = 1 and $current.diffGroup//diff[1]/@type = 'att.value' and $current.diffGroup//diff[1]/@att.name = 'artic'">
+                                                                            <p>
+                                                                                Different articulation in source. <xsl:value-of select="string-join($all.sources.so.far,', ')"/> read 
+                                                                                <xsl:value-of select="$current.diffGroup//diff[1]/@core.value"/>, while <xsl:value-of select="$source.id"/>
+                                                                                reads <xsl:value-of select="$current.diffGroup//diff[1]/@source.value"/>.
+                                                                            </p>
+                                                                        </xsl:if>
+                                                                        <!-- debug: keep the diff results -->
+                                                                        <xsl:copy-of select="$current.diffGroup"/>    
+                                                                        
+                                                                    </annot>
+                                                                    
+                                                                    <!-- deal with material following the diff -->
+                                                                    <xsl:choose>
+                                                                        <!-- when there are subsequent diffs -->
+                                                                        <xsl:when test="$current.pos lt count($relevant.diffs)">
+                                                                            <xsl:apply-templates select="$core.layer/child::mei:*" mode="get.by.tstamps">
+                                                                                <xsl:with-param name="after.tstamp" select="number($current.diffGroup/@tstamp.last)" as="xs:double" tunnel="yes"/>
+                                                                                <xsl:with-param name="before.tstamp" select="number($relevant.diffs[($current.pos + 1)]/@tstamp.first)" as="xs:double" tunnel="yes"/>
+                                                                                <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                                                <xsl:with-param name="matching.source.id" select="$closest.source.id" as="xs:string" tunnel="yes"/>
+                                                                            </xsl:apply-templates>
+                                                                        </xsl:when>
+                                                                        <!-- when this is the last diff -->
+                                                                        <xsl:otherwise>
+                                                                            <xsl:apply-templates select="$core.layer/child::mei:*" mode="get.by.tstamps">
+                                                                                <xsl:with-param name="after.tstamp" select="number($current.diffGroup/@tstamp.last)" as="xs:double" tunnel="yes"/>
+                                                                                <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                                                <xsl:with-param name="matching.source.id" select="$closest.source.id" as="xs:string" tunnel="yes"/>
+                                                                            </xsl:apply-templates>
+                                                                        </xsl:otherwise>
+                                                                    </xsl:choose>
+                                                                    
+                                                                </xsl:for-each>
+                                                                
+                                                            </xsl:otherwise>
+                                                            
+                                                        </xsl:choose>
+                                                        
+                                                        
+                                                    </xsl:otherwise>
+                                                </xsl:choose>
+                                                
+                                            </xsl:for-each>
+                                                 
+                                                    
                                             
                                         </xsl:otherwise>
                                     </xsl:choose>
@@ -795,6 +1067,9 @@
                                 
                                 <!-- no apps in this layer, but there are still differences -->
                                 <xsl:when test="$layer.comparison//diff">
+                                    
+                                    <xsl:message select="'   INFO: new differences found for layer ' || $core.layer/@n || ' in ' || $source.staff.raw/@xml:id || ', with existing apps in other layers (please check).'"/>
+                                    
                                     <xsl:variable name="layer.diffs" select="local:groupDiffs($layer.comparison[local-name() = 'diff'],$core.layer.profile,$source.layer.profile)"/>
                                     
                                     <xsl:apply-templates select="$core.layer" mode="generate.apps">
@@ -813,7 +1088,6 @@
                                 </xsl:otherwise>
                             </xsl:choose>
                             
-                            
                         </xsl:copy>
                         
                     </xsl:for-each>
@@ -826,7 +1100,10 @@
             
             <!-- situation can't be resolved, so generate a "hiccup" for manual resolution -->
             <xsl:otherwise>
-                <copy>
+                
+                <xsl:message select="'HICCUP: ' || $source.staff.raw/@xml:id || ' seems impossible to be resolved. Generated hiccup, please resolve manually.'"/>
+                
+                <xsl:copy>
                     <xsl:apply-templates select="@*" mode="#current"/>
                     <hiccup>
                         <core source="#{string-join($all.sources.so.far,' #')}">
@@ -841,14 +1118,14 @@
                             <xsl:copy-of select="$full.staff.comparison"/>
                         </protocol>
                     </hiccup>
-                </copy>
+                </xsl:copy>
             </xsl:otherwise>
         </xsl:choose>
         
         
     </xsl:template>
     
-    <xsl:template match="mei:annot/@plist" mode="compare.phase1">
+    <xsl:template match="mei:annot/@plist" mode="compare.phase1 #unnamed">
         <xsl:param name="add.plist.entry" as="xs:string?" required="no" tunnel="yes"/>
         
         <xsl:choose>
@@ -873,6 +1150,13 @@
             </xsl:otherwise>
         </xsl:choose>
         
+    </xsl:template>
+    
+    <xsl:template match="mei:annot" mode="get.by.tstamps merge compare.phase1"/>
+    <xsl:template match="mei:app" mode="compare.phase1">
+        <xsl:next-match/>
+        <xsl:if test="local-name(following-sibling::mei:*[1]) = 'annot'"/>
+        <xsl:apply-templates select="following-sibling::mei:annot[1]" mode="#unnamed"/>
     </xsl:template>
     
     <!-- creates profiles for all variants contained in a staff element and compares them with the core -->
@@ -1046,11 +1330,25 @@
     
     </xsl:function>
     
+    <xsl:function name="local:groupDiffs" as="node()">
+        <xsl:param name="diffs" as="node()*"/>
+        <xsl:param name="core.range" as="node()"/>
+        <xsl:param name="source.range" as="node()"/>
+        
+        <xsl:variable name="null" as="node()">
+            <noRanges/>
+        </xsl:variable>
+        
+        <xsl:sequence select="local:groupDiffs($diffs,$core.range,$source.range,$null)"/>
+        
+    </xsl:function>
+    
     <!-- groups differences, into ranges of timestamps, where all notes in between vary. -->
     <xsl:function name="local:groupDiffs" as="node()">
         <xsl:param name="diffs" as="node()*"/>
         <xsl:param name="core.range" as="node()"/>
         <xsl:param name="source.range" as="node()"/>
+        <xsl:param name="existing.ranges" required="no" as="node()*"/>
         
         <xsl:variable name="scope.tstamp.first" select="number($source.range/@tstamp.first)" as="xs:double"/>
         <xsl:variable name="scope.tstamp.end" select="number($source.range/@tstamp.end)" as="xs:double"/>
@@ -1083,9 +1381,19 @@
             </xsl:for-each>    
         </xsl:variable>
         
+        <!-- get starting tstamps of existing apps -->
+        <xsl:variable name="existing.app.start.positions" as="xs:integer*">
+            <xsl:for-each select="(1 to count($base.tstamps))">
+                <xsl:variable name="pos" select="position()" as="xs:integer"/>
+                <xsl:if test="$base.tstamps[$pos] = $existing.ranges//@tstamp.first">
+                    <xsl:value-of select="$pos"/>
+                </xsl:if>
+            </xsl:for-each>
+        </xsl:variable>
+        
         <!-- group differences into ranges of uninterupted difference -->
         <xsl:variable name="ranges" as="node()*">
-            <xsl:copy-of select="local:getDifferingRanges($differing.positions,0)"/>
+            <xsl:copy-of select="local:getDifferingRanges($differing.positions,0,$existing.app.start.positions)"/>
         </xsl:variable>
         
         <!-- debug: if there are no ranges, something must be wrong. At least one range with the duration of one tstamp must be affected in this staff! -->
@@ -1159,13 +1467,18 @@
     <xsl:function name="local:getDifferingRanges" as="node()*">
         <xsl:param name="differing.positions" as="xs:integer*"/>
         <xsl:param name="position" as="xs:integer"/>
+        <xsl:param name="existing.app.start.positions" as="xs:integer*"/>
         <xsl:choose>
             <xsl:when test="some $pos in $differing.positions satisfies ($pos gt $position)">
                 <xsl:variable name="start.pos" select="$differing.positions[. gt $position][1]" as="xs:integer"/>
-                <xsl:variable name="end.pos" select="if($start.pos + 1 = $differing.positions) then(local:getEndPos($differing.positions,$start.pos + 1)) else($start.pos)" as="xs:integer"/>
+                <xsl:variable name="end.pos" select="if(($start.pos + 1 = $differing.positions) and not($start.pos + 1 = $existing.app.start.positions)) then(local:getEndPos($differing.positions,$start.pos + 1)) else($start.pos)" as="xs:integer"/>
+                
+                <xsl:if test="($start.pos + 1 = $differing.positions) and ($start.pos + 1 = $existing.app.start.positions)">
+                    <xsl:message select="'      INFO: rearranged ranges because of existing apps!'"/>
+                </xsl:if>
                 
                 <range start="{$start.pos}" end="{$end.pos}"/>
-                <xsl:copy-of select="local:getDifferingRanges($differing.positions,$end.pos + 1)"/>
+                <xsl:copy-of select="local:getDifferingRanges($differing.positions,$end.pos + 1,$existing.app.start.positions)"/>
             </xsl:when>
         </xsl:choose>
     </xsl:function>
@@ -1302,59 +1615,6 @@
     </xsl:template>
     
     <!-- /mode merge – END -->
-    
-    <!-- mode generate.apps – START -->
-    
-    <!-- resolving events -->
-    <!--<xsl:template match="mei:staff" mode="generate.apps">
-        <xsl:param name="diff.groups" as="node()?" tunnel="yes"/>
-        <xsl:param name="corresp" as="node()*" tunnel="yes"/>
-        
-        <xsl:variable name="staff.id" select="@xml:id" as="xs:string"/>
-        <xsl:variable name="staff.id.source" select="replace($staff.id,'core_',concat($source.id,'_'))" as="xs:string"/>
-        <xsl:variable name="staff.n" select="@n" as="xs:string"/>
-        <xsl:variable name="core.staff" select="." as="node()"/>
-        
-        <xsl:choose>
-            <!-\- no variance to deal with for this staff -\->
-            <xsl:when test="not($diff.groups//diffGroup) and not($diff.groups//otherDiffs/diff)">
-                <xsl:apply-templates select="." mode="merge">
-                    <xsl:with-param name="corresp" select="$corresp" as="node()*" tunnel="yes"/>
-                </xsl:apply-templates>
-            </xsl:when>
-            <xsl:otherwise>
-                <xsl:variable name="source.staff" select="$source.preComp//mei:staff[@xml:id = $staff.id.source]" as="node()"/>
-                <xsl:variable name="local.diff.groups" select="$diff.groups//diffGroup" as="node()+"/>
-                
-                <!-\- staff needs to be copied prior to further processing -\->
-                <xsl:copy>
-                    <xsl:apply-templates select="@*" mode="#current"/>
-                    
-                    <layer xmlns="http://www.music-encoding.org/ns/mei">
-                        <xsl:apply-templates select="child::mei:layer/@*" mode="#current"/>
-                        
-                        <xsl:apply-templates select="child::mei:layer/node()" mode="get.by.tstamps">
-                            <xsl:with-param name="corresp" select="$corresp" as="node()*" tunnel="yes"/>
-                            <xsl:with-param name="local.diff.groups" select="$local.diff.groups" as="node()+" tunnel="yes"/>
-                            <xsl:with-param name="source.staff" select="$source.staff" as="node()" tunnel="yes"/>
-                        </xsl:apply-templates>    
-                        
-                    </layer>
-                    
-                    
-                    <annot xmlns="http://www.music-encoding.org/ns/mei" xml:id="x{uuid:randomUUID()}" type="merge.protocol" source="#{$source.id}">
-                        <date isodate="{current-dateTime()}"/>
-                        <xsl:copy-of select="$local.diff.groups//staff[@xml:id = ($staff.id,$staff.id.source)]"/>
-                    </annot>
-                    
-                </xsl:copy>
-                
-            </xsl:otherwise>
-        </xsl:choose>
-        
-    </xsl:template>-->
-    
-    <!-- /mode generate.apps – END -->
     
     <!-- mode get.by.tstamps – START -->
     <!-- used to select contents of a staff depending on tstamps -->

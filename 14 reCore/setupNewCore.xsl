@@ -32,7 +32,7 @@
     <xsl:variable name="xsl.version" select="'1.0.1'"/>
     
     <!-- gets global variables based on some general principles of the Freischütz Data Model -->
-    <xsl:variable name="source.id" select="substring-before(/mei:mei/@xml:id,'_')" as="xs:string"/>
+    <xsl:variable name="source.id" select="if(contains(/mei:mei/@xml:id,'_')) then(substring-before(/mei:mei/@xml:id,'_')) else(/mei:mei/@xml:id)" as="xs:string"/>
     <xsl:variable name="mov.id" select="substring-before((//mei:measure)[1]/@xml:id,'_measure')" as="xs:string"/>
     <xsl:variable name="mov.n" select="substring-after($mov.id,'_mov')" as="xs:string"/>
     
