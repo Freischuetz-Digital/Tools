@@ -229,6 +229,7 @@
     <xsl:template match="@facs" mode="coreDraft"/>
     <xsl:template match="@corresp" mode="coreDraft"/>
     <xsl:template match="mei:space/@n" mode="coreDraft"/>
+    <xsl:template match="mei:cpMark" mode="coreDraft"/>
     
     <!-- ***SOURCE*MODE*********************************** -->
     
