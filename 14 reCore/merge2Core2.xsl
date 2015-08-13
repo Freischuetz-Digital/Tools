@@ -2014,8 +2014,6 @@
             </ce.comparison>
         </xsl:variable>
         
-        <xsl:copy-of select="$ce.comparison"/>
-        
         <xsl:copy>
             <xsl:apply-templates select="node() | @*">
                 <xsl:with-param name="diff.groups" select="$ce.comparison" tunnel="yes" as="node()"/>
