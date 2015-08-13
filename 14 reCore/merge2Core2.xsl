@@ -2506,7 +2506,14 @@
                             <xsl:message terminate="yes" select="'Element ' || $controlEvent/@xml:id || ' seems like an mei:dynam, not mei:dir (' || $value || '). Please correct!'"/>
                         </xsl:when>
                         <xsl:otherwise>
-                            <xsl:message terminate="yes" select="'a value of ' || $value || ' for dir ' || $controlEvent/@xml:id || ' is currently not supported by merge2Core.xsl. Please check!'"/>
+                            <xsl:choose>
+                                <xsl:when test="$controlEvent/@type = 'stage'">
+                                    <xsl:message terminate="no" select="'Since dir ' || $controlEvent/@xml:id || ' is of type=stage, its value (' || $value || ') is not considered for comparison. Please check results!'"/>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <xsl:message terminate="yes" select="'a value of ' || $value || ' for dir ' || $controlEvent/@xml:id || ' is currently not supported by merge2Core.xsl. Please check!'"/>
+                                </xsl:otherwise>
+                            </xsl:choose>
                         </xsl:otherwise>
                     </xsl:choose>
                 </xsl:variable>
