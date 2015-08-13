@@ -2509,6 +2509,7 @@
                             <xsl:choose>
                                 <xsl:when test="$controlEvent/@type = 'stage'">
                                     <xsl:message terminate="no" select="'Since dir ' || $controlEvent/@xml:id || ' is of type=stage, its value (' || $value || ') is not considered for comparison. Please check results!'"/>
+                                    <xsl:value-of select="'stage'"/>
                                 </xsl:when>
                                 <xsl:otherwise>
                                     <xsl:message terminate="yes" select="'a value of ' || $value || ' for dir ' || $controlEvent/@xml:id || ' is currently not supported by merge2Core.xsl. Please check!'"/>
