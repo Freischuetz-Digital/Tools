@@ -115,8 +115,8 @@
         <xsl:if test="//mei:clef[not(@tstamp)]">
             <xsl:message terminate="yes" select="'ERROR: the following clefs have no @tstamp: ' || string-join(//mei:clef[not(@tstamp)]/@xml:id,', ')"/>
         </xsl:if>
-        <xsl:if test="//@artic[not(. = ('dot','stroke'))]">
-            <xsl:message terminate="no" select="'ERROR: @artic uses the following values: /' || string-join((distinct-values(//@artic)),'/, /') || '/, but only /dot/ and /stroke/ are supported'"/>
+        <xsl:if test="//@artic[not(every $value in tokenize(.,' ') satisfies $value = ('dot','stroke','acc'))]">
+            <xsl:message terminate="no" select="'ERROR: @artic uses the following values: /' || string-join((distinct-values(//@artic)),'/, /') || '/, but only /acc/, /dot/ and /stroke/ are supported'"/>
         </xsl:if>
         
         <xsl:choose>
