@@ -2414,6 +2414,9 @@
                         <xsl:when test="$value = 'punto darco'">
                             <xsl:value-of select="'puntoDarco'"/>
                         </xsl:when>
+                        <xsl:when test="$value = 'punta darco'">
+                            <xsl:value-of select="'puntoDarco'"/>
+                        </xsl:when>
                         <xsl:when test="$value = 'puto darco'">
                             <xsl:value-of select="'puntoDarco'"/>
                         </xsl:when>
