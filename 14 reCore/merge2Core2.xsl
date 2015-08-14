@@ -356,6 +356,7 @@
         <xsl:copy>
             <xsl:attribute name="tstamp" select="parent::mei:chord/@tstamp"/>
             <xsl:attribute name="dur" select="parent::mei:chord/@dur"/>
+            <xsl:apply-templates select="parent::mei:chord/@artic | parent::mei:chord/@dots | parent::mei:chord/@tie" mode="profiling.prep"/>
             <xsl:apply-templates select="node() | @*" mode="#current"/>
         </xsl:copy>
     </xsl:template>
