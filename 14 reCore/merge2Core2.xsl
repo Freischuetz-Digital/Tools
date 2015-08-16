@@ -360,6 +360,19 @@
             <xsl:apply-templates select="node() | @*" mode="#current"/>
         </xsl:copy>
     </xsl:template>
+    <!-- in case of multiple layers, make sure to share articulation -->
+    <xsl:template match="mei:note[not(parent::mei:chord) and not(@grace)]" mode="profiling.prep">
+        <xsl:copy>
+            <xsl:if test="not(@artic)">
+                <xsl:variable name="tstamp" select="@tstamp" as="xs:string"/>
+                <xsl:variable name="dur" select="@dur" as="xs:string"/>
+                <xsl:variable name="dots" select="@dots" as="xs:string?"/>
+                
+                <xsl:apply-templates select="ancestor::mei:staff//mei:note[@tstamp = $tstamp and @dur = $dur and (if ($dots) then(@dots and @dots = $dots) else(true()))]/@artic" mode="#current"/>
+                <xsl:apply-templates select="node() | @*" mode="#current"/>
+            </xsl:if>
+        </xsl:copy>
+    </xsl:template>
     <xsl:template match="mei:clef[not(@tstamp)]" mode="profiling.prep">
         <xsl:copy>
             <xsl:variable name="tstamp" as="xs:string">
