@@ -1793,12 +1793,12 @@
                         </xsl:when>
                         <xsl:when test="$diff/@missing.in = 'source'">
                             <xsl:variable name="tstamp" select="$diff/@tstamp" as="xs:string"/>
-                            <xsl:variable name="source.diff" select="$diffs/descendant-or-self::diff[@type = 'missing.pitch' and @tstamp = $tstamp and @missing.in = 'core']" as="node()?"/>
+                            <xsl:variable name="source.diffs" select="$diffs/descendant-or-self::diff[@type = 'missing.pitch' and @tstamp = $tstamp and @missing.in = 'core']" as="node()*"/>
                             <xsl:variable name="core.dur" select="local:getDur($core/id($diff/@existing.id))"/>
-                            <xsl:variable name="source.dur" select="if(exists($source.diff)) then(local:getDur($source.preComp//mei:*[@xml:id = $source.diff/@existing.id])) else('NaN')" as="xs:string"/>
+                            <xsl:variable name="source.dur" select="if(count($source.diffs) gt 0) then(for $source.diff in $source.diffs return local:getDur($source.preComp//mei:*[@xml:id = $source.diff/@existing.id])) else('NaN')" as="xs:string*"/>
                             
                             <xsl:choose>
-                                <xsl:when test="exists($source.diff) and $source.dur = $core.dur">
+                                <xsl:when test="count($source.diffs) gt 0 and count(distinct-values($source.dur)) = 1 and $source.dur[1] = $core.dur">
                                     <!-- this diff should have been addressed above, and is thus removed here. -->
                                 </xsl:when>
                                 <xsl:otherwise>
