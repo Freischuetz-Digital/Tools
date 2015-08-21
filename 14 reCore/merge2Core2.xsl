@@ -2447,6 +2447,9 @@
                         <xsl:when test="$value = 'recit'">
                             <xsl:value-of select="'recit'"/>
                         </xsl:when>
+                        <xsl:when test="$value = 'rect'">
+                            <xsl:value-of select="'recit'"/>
+                        </xsl:when>
                         <xsl:when test="$value = 'scherz'">
                             <xsl:value-of select="'scherzando'"/>
                         </xsl:when>
