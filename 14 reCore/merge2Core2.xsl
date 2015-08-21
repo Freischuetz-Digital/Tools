@@ -710,11 +710,9 @@
                                                 <xsl:apply-templates select="$core.layer/child::mei:*" mode="get.by.tstamps">
                                                     <xsl:with-param name="from.tstamp" select="number($current.diffGroup/@tstamp.first)" as="xs:double" tunnel="yes"/>
                                                     <xsl:with-param name="to.tstamp" select="number($current.diffGroup/@tstamp.last)" as="xs:double" tunnel="yes"/>
-                                                    <xsl:with-param name="corresp" select="$layer.comparison/descendant-or-self::sameas" as="node()*" tunnel="yes"/>
                                                 </xsl:apply-templates>
                                             </rdg>
                                             <rdg xml:id="{$second.rdg.id}" source="#{$source.id}">
-                                                
                                                 <xsl:apply-templates select="$source.layer/child::mei:*" mode="get.by.tstamps">
                                                     <xsl:with-param name="from.tstamp" select="number($current.diffGroup/@tstamp.first)" as="xs:double" tunnel="yes"/>
                                                     <xsl:with-param name="to.tstamp" select="number($current.diffGroup/@tstamp.last)" as="xs:double" tunnel="yes"/>
@@ -1872,10 +1870,21 @@
         <xsl:param name="corresp" as="node()*" tunnel="yes"/>
         <xsl:variable name="this.id" select="."/>
         
-        <xsl:copy-of select="."/>
-        <xsl:if test="$this.id = $corresp/descendant-or-self::sameas/@core">
-            <xsl:attribute name="synch" select="$corresp/descendant-or-self::sameas[@core = $this.id]/@source"/>
-        </xsl:if>
+        <xsl:choose>
+            <!-- dealing with element from core -->
+            <xsl:when test="$this.id = $corresp/descendant-or-self::sameas/@core">
+                <xsl:copy-of select="."/>
+                <xsl:attribute name="synch" select="$corresp/descendant-or-self::sameas[@core = $this.id]/@source"/>
+            </xsl:when>
+            <!-- dealing with element from source -->
+            <xsl:when test="$this.id = $corresp/descendant-or-self::sameas/@source">
+                <xsl:attribute name="xml:id" select="'c'||uuid:randomUUID()"/>
+                <xsl:attribute name="synch" select="$this.id"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:copy-of select="."/>
+            </xsl:otherwise>
+        </xsl:choose>
         
     </xsl:template>
     
