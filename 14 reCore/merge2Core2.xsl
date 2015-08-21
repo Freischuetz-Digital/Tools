@@ -730,7 +730,6 @@
                                                 </p>
                                             </xsl:if>
                                             <!-- debug: keep the diff results -->
-                                            
                                             <xsl:copy-of select="$current.diffGroup"/>
                                             
                                             
@@ -1878,6 +1877,10 @@
             </xsl:when>
             <!-- dealing with element from source -->
             <xsl:when test="$this.id = $corresp/descendant-or-self::sameas/@source">
+                <xsl:attribute name="xml:id" select="$corresp/descendant-or-self::sameas[@source = $this.id]/@core"/>
+                <xsl:attribute name="synch" select="$this.id"/>
+            </xsl:when>
+            <xsl:when test="not(starts-with(ancestor::mei:staff/@xml:id,'core_'))">
                 <xsl:attribute name="xml:id" select="'c'||uuid:randomUUID()"/>
                 <xsl:attribute name="synch" select="$this.id"/>
             </xsl:when>
@@ -3545,8 +3548,8 @@
             <xsl:for-each select="$source.atts">
                 <xsl:variable name="source.att" select="."/>
                 <xsl:choose>
-                    <xsl:when test="$source.att = $core.atts">
-                        <!-- the attribute with the same value exists both in the core and the source -->                        
+                    <xsl:when test="string($source.att) = string($core.atts[local-name() = local-name($source.att)])">
+                        <!-- the attribute with the same value exists both in the core and the source -->
                     </xsl:when>
                     <xsl:when test="local-name($source.att) = $core.atts.names">
                         <!-- the attribute has a different value -->
