@@ -1762,16 +1762,16 @@
                         </xsl:when>
                         <xsl:when test="$diff/@missing.in = 'core'">
                             <xsl:variable name="tstamp" select="$diff/@tstamp" as="xs:string"/>
-                            <xsl:variable name="core.diff" select="$diffs/descendant-or-self::diff[@type = 'missing.pitch' and @tstamp = $tstamp and @missing.in = 'source']" as="node()?"/>
+                            <xsl:variable name="core.diffs" select="$diffs/descendant-or-self::diff[@type = 'missing.pitch' and @tstamp = $tstamp and @missing.in = 'source']" as="node()*"/>
                             <xsl:variable name="source.dur" select="local:getDur($source.preComp//mei:*[@xml:id = $diff/@existing.id])"/>
-                            <xsl:variable name="core.dur" select="if(exists($core.diff)) then(local:getDur($core/id($core.diff/@existing.id))) else('NaN')" as="xs:string"/>
+                            <xsl:variable name="core.dur" select="if(count($core.diffs) gt 0) then(for $core.diff in $core.diffs return local:getDur($core/id($core.diff/@existing.id))) else('NaN')" as="xs:string*"/>
                             
                             <xsl:choose>
-                                <xsl:when test="exists($core.diff) and $source.dur = $core.dur">
+                                <xsl:when test="count($core.diffs) = 1 and count(distinct-values($core.dur)) = 1 and $source.dur = $core.dur[1]">
                                     <!--<xsl:message select="'merging diff at ' || $diff/@staff || ', tstamp ' || $diff/@tstamp"/>-->
                                     
                                     <xsl:variable name="source.elem" select="$source.preComp//mei:*[@xml:id = $diff/@existing.id]" as="node()"/>
-                                    <xsl:variable name="core.elem" select="$core/id($core.diff/@existing.id)" as="node()"/>
+                                    <xsl:variable name="core.elem" select="$core/id($core.diffs[1]/@existing.id)" as="node()"/>
                                     <xsl:variable name="better.diff" select="local:compareAttributes($source.elem,$core.elem)[local-name() = 'diff']" as="node()*"/>
                                     
                                     <xsl:choose>
@@ -1780,7 +1780,7 @@
                                             <xsl:copy-of select="$better.diff"/>
                                         </xsl:when>
                                         <xsl:otherwise>
-                                            <diff type="different.pitch" staff="{$diff/@staff}" tstamp="{$diff/@tstamp}" source.pitch="{$diff/@pitch}" source.pnum="{$diff/@pnum}" core.pitch="{$core.diff/@pitch}" core.pnum="{$core.diff/@pnum}" source.elem.id="{$diff/@existing.id}" core.elem.id="{$core.diff/@existing.id}"/>
+                                            <diff type="different.pitch" staff="{$diff/@staff}" tstamp="{$diff/@tstamp}" source.pitch="{$diff/@pitch}" source.pnum="{$diff/@pnum}" core.pitch="{$core.diffs[1]/@pitch}" core.pnum="{$core.diffs[1]/@pnum}" source.elem.id="{$diff/@existing.id}" core.elem.id="{$core.diffs[1]/@existing.id}"/>
                                         </xsl:otherwise>
                                     </xsl:choose>
                                     
@@ -1798,7 +1798,7 @@
                             <xsl:variable name="source.dur" select="if(count($source.diffs) gt 0) then(for $source.diff in $source.diffs return local:getDur($source.preComp//mei:*[@xml:id = $source.diff/@existing.id])) else('NaN')" as="xs:string*"/>
                             
                             <xsl:choose>
-                                <xsl:when test="count($source.diffs) gt 0 and count(distinct-values($source.dur)) = 1 and $source.dur[1] = $core.dur">
+                                <xsl:when test="count($source.diffs) = 1 and count(distinct-values($source.dur)) = 1 and $source.dur[1] = $core.dur">
                                     <!-- this diff should have been addressed above, and is thus removed here. -->
                                 </xsl:when>
                                 <xsl:otherwise>
