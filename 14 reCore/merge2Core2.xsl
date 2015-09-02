@@ -126,7 +126,8 @@
                 
                 <!-- debug -->
                 <xsl:message terminate="no" select="'INFO: first round with merge2Core2.xsl to merge ' || $source.id || ' into the core of mov' || $mov.n || '. Existing sources for that movement: ' || string-join($all.sources.so.far,', ')"/>
-                <xsl:message terminate="no" select="'   Please continue by manually resolving all issues which cannot be automated in file '"/>
+                <xsl:message terminate="no" select="'   Please continue by manually resolving all issues which cannot be automated in file ' || concat($basePath,'/14%20reCored/',$source.id,'/core_mov',$mov.n,'+',$source.id,'-protocol','.xml')"/>
+                <xsl:message select="' '"/>
                 
                 <!-- in compare.phase1, the actual comparison of events is executed -->
                 <xsl:variable name="compare.phase1">
@@ -155,6 +156,7 @@
                     
                     <xsl:variable name="missing.elements" select="$source.preComp//mei:*[((@tstamp and ancestor::mei:layer and not(local-name() = 'chord')) or (local-name() = 'note') or (local-name() = ('slur','hairpin','dynam','dir') and not(ancestor::mei:orig))) and not(@xml:id = $compare.phase2//@synch)]" as="node()+"/>
                     
+                    <xsl:message select="' '"/>
                     <xsl:message select="'Attention: Not all elements from the source could be synched properly. Please make sure the following elements are covered while resolving the protocol: '"/>
                     <xsl:for-each select="$missing.elements">
                         <xsl:variable name="elem" select="." as="node()"/>
@@ -167,7 +169,8 @@
                             </xsl:otherwise>
                         </xsl:choose>
                     </xsl:for-each>
-                    <xsl:message terminate="yes" select="'Please address these elements while resolving hiccups!'"/>
+                    <xsl:message select="' '"/>
+                    <xsl:message terminate="no" select="'Please address these elements while resolving hiccups!'"/>
                 </xsl:if>
                 
             </xsl:when>
@@ -176,7 +179,7 @@
             <xsl:when test="$protocol.file//*[local-name() = 'hiccup']">
                 <!-- debug -->
                 <xsl:message terminate="no" select="'INFO: second round with merge2Core2.xsl to merge ' || $source.id || ' into the core of mov' || $mov.n || '. Examining protocol file at ' || concat($basePath,'/14%20reCored/',$source.id,'/core_mov',$mov.n,'+',$source.id,'-protocol','.xml')"/>
-                
+                <xsl:message select="' '"/>
                 <xsl:message terminate="yes" select="'ERROR: Protocol still contains hiccups. Please resolve!'"/>
             </xsl:when>
             
@@ -187,8 +190,9 @@
                 
                 <!-- debug -->
                 <xsl:message terminate="no" select="'INFO: second round with merge2Core2.xsl to merge ' || $source.id || ' into the core of mov' || $mov.n || '. Examining protocol file at ' || concat($basePath,'/14%20reCored/',$source.id,'/core_mov',$mov.n,'+',$source.id,'-protocol','.xml')"/>
-                
+                <xsl:message select="' '"/>
                 <xsl:message select="'ERROR: Not all elements from the source have been synched properly. Missing elements: '"/>
+                <xsl:message select="' '"/>
                 <xsl:for-each select="$missing.elements">
                     <xsl:variable name="elem" select="." as="node()"/>
                     <xsl:choose>
@@ -200,6 +204,7 @@
                         </xsl:otherwise>
                     </xsl:choose>
                 </xsl:for-each>
+                <xsl:message select="' '"/>
                 <xsl:message terminate="yes" select="'You need to add @synch to the corresponding elements in the core before completing this movement!'"/>
                 
             </xsl:when>
@@ -209,6 +214,7 @@
                 
                 <!-- debug -->
                 <xsl:message terminate="no" select="'INFO: second round with merge2Core2.xsl to merge ' || $source.id || ' into the core of mov' || $mov.n || '. Examining protocol file at ' || concat($basePath,'/14%20reCored/',$source.id,'/core_mov',$mov.n,'+',$source.id,'-protocol','.xml')"/>
+                <xsl:message select="' '"/>
                 
                 <xsl:variable name="newCore" select="$protocol.file//coreDraft/mei:mei" as="node()"/>
                 <xsl:variable name="source.preComp" select="$protocol.file//source.preComp/mei:mei" as="node()"/>
@@ -328,7 +334,7 @@
     </xsl:template>
     
     <!-- source-specific information to be removed from the core -->
-    <xsl:template match="@sameas" mode="source.preComp"/>
+    <xsl:template match="@sameas[not(parent::mei:measure)]" mode="source.preComp"/>
     <xsl:template match="@stem.dir" mode="source.preComp"/>
     <xsl:template match="@curvedir" mode="source.preComp"/>
     <xsl:template match="@place" mode="source.preComp"/>
@@ -2021,6 +2027,10 @@
     
     <xsl:template match="mei:mdiv" mode="compare.phase2">
         
+        <xsl:message select="' '"/>
+        <xsl:message select="'INFO: Generating profiles for controlEvents. Second phase of comparison started.'"/>
+        <xsl:message select="' '"/>
+        
         <!-- generate profiles for all controlevents, both in core and source -->
         <xsl:variable name="controlEvents.source.profile" as="node()*">
             <xsl:for-each select="$source.preComp//mei:*[local-name() = ('slur','hairpin','dynam','dir') and not(ancestor::orig)]">
@@ -2041,7 +2051,7 @@
         </xsl:variable>
         
         <xsl:copy>
-            <xsl:apply-templates select="node() | @*">
+            <xsl:apply-templates select="node() | @*" mode="#current">
                 <xsl:with-param name="diff.groups" select="$ce.comparison" tunnel="yes" as="node()"/>
                 <xsl:with-param name="source.prep" select="$source.preComp//mei:score" tunnel="yes" as="node()"/>
             </xsl:apply-templates>
@@ -3541,10 +3551,10 @@
         <xsl:param name="source.elem" as="node()"/>
         <xsl:param name="core.elem" as="node()"/>
         
-        <xsl:variable name="source.atts" select="$source.elem/(@* except @xml:id)" as="attribute()*"/>
+        <xsl:variable name="source.atts" select="$source.elem/(@* except (@xml:id|@sameas))" as="attribute()*"/>
         <xsl:variable name="core.atts" select="$core.elem/(@* except @xml:id)" as="attribute()*"/>
         
-        <xsl:variable name="source.atts.names" select="$source.elem/(@* except @xml:id)/local-name()" as="xs:string*"/>
+        <xsl:variable name="source.atts.names" select="$source.elem/(@* except (@xml:id|@sameas))/local-name()" as="xs:string*"/>
         <xsl:variable name="core.atts.names" select="$core.elem/(@* except @xml:id)/local-name()" as="xs:string*"/>
         
         <xsl:variable name="diffs" as="node()*">
