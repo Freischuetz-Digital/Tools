@@ -2151,6 +2151,9 @@
                         <xsl:when test="$value = 'crescendo assai'">
                             <xsl:value-of select="'crescAssai'"/>
                         </xsl:when>
+                        <xsl:when test="$value = 'cres assai'">
+                            <xsl:value-of select="'crescAssai'"/>
+                        </xsl:when>
                         <xsl:when test="$value = 'crescen'">
                             <xsl:value-of select="'cresc'"/>
                         </xsl:when>
