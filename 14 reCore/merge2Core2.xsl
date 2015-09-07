@@ -2463,6 +2463,15 @@
                         <xsl:when test="$value = 'rect'">
                             <xsl:value-of select="'recit'"/>
                         </xsl:when>
+                        <xsl:when test="$value = 'ritardando'">
+                            <xsl:value-of select="'ritardando'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'rit'">
+                            <xsl:value-of select="'ritardando'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'ritard'">
+                            <xsl:value-of select="'ritardando'"/>
+                        </xsl:when>
                         <xsl:when test="$value = 'scherz'">
                             <xsl:value-of select="'scherzando'"/>
                         </xsl:when>
