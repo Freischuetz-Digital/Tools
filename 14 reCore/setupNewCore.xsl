@@ -148,11 +148,21 @@
     
     <!-- <expan> is a result of resolving abbreviations like mRpt and cpMark -->
     <xsl:template match="mei:expan" mode="coreDraft">
-        <rdg xmlns="http://www.music-encoding.org/ns/mei">
-            <xsl:attribute name="xml:id" select="'c'||uuid:randomUUID()"/>
-            <xsl:attribute name="source" select="'#' || $source.id"/>
-            <xsl:apply-templates select="node()" mode="#current"/>
-        </rdg>
+        <xsl:choose>
+            <xsl:when test="parent::mei:choice">
+                <rdg xmlns="http://www.music-encoding.org/ns/mei">
+                    <xsl:attribute name="xml:id" select="'c'||uuid:randomUUID()"/>
+                    <xsl:attribute name="source" select="'#' || $source.id"/>
+                    <xsl:apply-templates select="node()" mode="#current"/>
+                </rdg>
+            </xsl:when>
+            <xsl:when test="parent::mei:syl">
+                <xsl:apply-templates select="node()" mode="#current"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:message terminate="yes" select="'Doh, another mei:expan I have no idea what to do with… (' || @xml:id || ' in measure ' || ancestor::mei:measure/@n || ')'"/>
+            </xsl:otherwise>
+        </xsl:choose>
     </xsl:template>
     
     <xsl:template match="mei:appInfo" mode="coreDraft">
