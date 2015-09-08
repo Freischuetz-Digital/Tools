@@ -139,10 +139,17 @@
                     <xsl:apply-templates select="$compare.phase1" mode="compare.phase2"/>
                 </xsl:variable>
                 
+                <xsl:variable name="compare.phase3">
+                    <xsl:apply-templates select="$compare.phase1" mode="compare.phase3">
+                        <xsl:with-param name="core.draft" select="$compare.phase2" tunnel="yes" as="node()"/>
+                        <xsl:with-param name="source.preComp" select="$source.preComp" tunnel="yes" as="node()"/>
+                    </xsl:apply-templates>
+                </xsl:variable>
+                
                 <xsl:result-document href="{concat($basePath,'/14%20reCored/',$source.id,'/core_mov',$mov.n,'+',$source.id,'-protocol','.xml')}">
                     <protocol>
                         <coreDraft>
-                            <xsl:copy-of select="$compare.phase2"/>        
+                            <xsl:copy-of select="$compare.phase3"/>        
                         </coreDraft>
                         <source.preComp>
                             <xsl:copy-of select="$source.preComp"/>
@@ -152,9 +159,9 @@
                 
                 <!-- stop processing if not all elements of the source are synched to the core -->
                 <xsl:if test="some $elem in $source.preComp//mei:*[(@tstamp and ancestor::mei:layer and not(local-name() = 'chord')) or (local-name() = 'note') or (local-name() = ('slur','hairpin','dynam','dir') and not(ancestor::mei:orig))]
-                    satisfies not($compare.phase2//mei:*[@synch = $elem/@xml:id])">
+                    satisfies not($compare.phase3//mei:*[@synch = $elem/@xml:id])">
                     
-                    <xsl:variable name="missing.elements" select="$source.preComp//mei:*[((@tstamp and ancestor::mei:layer and not(local-name() = 'chord')) or (local-name() = 'note') or (local-name() = ('slur','hairpin','dynam','dir') and not(ancestor::mei:orig))) and not(@xml:id = $compare.phase2//@synch)]" as="node()+"/>
+                    <xsl:variable name="missing.elements" select="$source.preComp//mei:*[((@tstamp and ancestor::mei:layer and not(local-name() = 'chord')) or (local-name() = 'note') or (local-name() = ('slur','hairpin','dynam','dir') and not(ancestor::mei:orig))) and not(@xml:id = $compare.phase3//@synch)]" as="node()+"/>
                     
                     <xsl:message select="' '"/>
                     <xsl:message select="'Attention: Not all elements from the source could be synched properly. Please make sure the following elements are covered while resolving the protocol: '"/>
@@ -3427,6 +3434,8 @@
         </xsl:copy>
     
     </xsl:template>
+    
+    
         
     <xsl:template match="mei:rdg/@source" mode="compare.phase2">
         <xsl:param name="source.id.toAdd" tunnel="yes" as="xs:string?"/>
@@ -3442,6 +3451,39 @@
     </xsl:template>
     
     <!-- /mode compare.phase2 – END -->
+    
+    <!-- mode compare.phase3 – START -->
+    
+    <!-- adjust @startid and @endid -->
+    <xsl:template match="@startid" mode="compare.phase3">
+        <xsl:param name="core.draft" tunnel="yes" as="node()"/>
+        <xsl:param name="source.preComp" tunnel="yes" as="node()"/>
+        
+        <xsl:variable name="tokens" select="tokenize(normalize-space(.),' ')" as="xs:string*"/>
+        <xsl:variable name="new.refs" as="xs:string*">
+            <xsl:for-each select="$tokens">
+                <xsl:variable name="current.token" select="." as="xs:string"/>
+                <xsl:value-of select="$core.draft//mei:*[@synch = substring($current.token,2)]/@xml:id"/>
+            </xsl:for-each>
+        </xsl:variable>
+        <xsl:attribute name="startid" select="'#' || string-join($new.refs,' #')"/>
+    </xsl:template>
+    
+    <xsl:template match="@endid" mode="compare.phase3">
+        <xsl:param name="core.draft" tunnel="yes" as="node()"/>
+        <xsl:param name="source.preComp" tunnel="yes" as="node()"/>
+        
+        <xsl:variable name="tokens" select="tokenize(normalize-space(.),' ')" as="xs:string*"/>
+        <xsl:variable name="new.refs" as="xs:string*">
+            <xsl:for-each select="$tokens">
+                <xsl:variable name="current.token" select="." as="xs:string"/>
+                <xsl:value-of select="$core.draft//mei:*[@synch = substring($current.token,2)]/@xml:id"/>
+            </xsl:for-each>
+        </xsl:variable>
+        <xsl:attribute name="endid" select="'#' || string-join($new.refs,' #')"/>
+    </xsl:template>
+    
+    <!-- /mode compare.phase3 – END -->
     
     <!-- mode source.cleanup – START -->
     
