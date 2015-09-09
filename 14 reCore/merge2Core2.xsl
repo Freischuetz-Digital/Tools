@@ -3459,28 +3459,47 @@
         <xsl:param name="core.draft" tunnel="yes" as="node()"/>
         <xsl:param name="source.preComp" tunnel="yes" as="node()"/>
         
-        <xsl:variable name="tokens" select="tokenize(normalize-space(.),' ')" as="xs:string*"/>
-        <xsl:variable name="new.refs" as="xs:string*">
-            <xsl:for-each select="$tokens">
-                <xsl:variable name="current.token" select="." as="xs:string"/>
-                <xsl:value-of select="$core.draft//mei:*[@synch = substring($current.token,2)]/@xml:id"/>
-            </xsl:for-each>
-        </xsl:variable>
-        <xsl:attribute name="startid" select="'#' || string-join($new.refs,' #')"/>
+        <xsl:choose>
+            <xsl:when test="not(ancestor::mei:rdg[@source = '#' || $source.id])">
+                <xsl:next-match/>
+            </xsl:when>
+            <xsl:otherwise>
+                
+                <xsl:variable name="tokens" select="tokenize(normalize-space(.),' ')" as="xs:string*"/>
+                <xsl:variable name="new.refs" as="xs:string*">
+                    <xsl:for-each select="$tokens">
+                        <xsl:variable name="current.token" select="." as="xs:string"/>
+                        <xsl:value-of select="$core.draft//mei:*[@synch = substring($current.token,2)]/@xml:id"/>
+                    </xsl:for-each>
+                </xsl:variable>
+                <xsl:attribute name="startid" select="'#' || string-join($new.refs,' #')"/>
+                
+            </xsl:otherwise>
+        </xsl:choose>
+        
+        
     </xsl:template>
     
     <xsl:template match="@endid" mode="compare.phase3">
         <xsl:param name="core.draft" tunnel="yes" as="node()"/>
         <xsl:param name="source.preComp" tunnel="yes" as="node()"/>
         
-        <xsl:variable name="tokens" select="tokenize(normalize-space(.),' ')" as="xs:string*"/>
-        <xsl:variable name="new.refs" as="xs:string*">
-            <xsl:for-each select="$tokens">
-                <xsl:variable name="current.token" select="." as="xs:string"/>
-                <xsl:value-of select="$core.draft//mei:*[@synch = substring($current.token,2)]/@xml:id"/>
-            </xsl:for-each>
-        </xsl:variable>
-        <xsl:attribute name="endid" select="'#' || string-join($new.refs,' #')"/>
+        <xsl:choose>
+            <xsl:when test="not(ancestor::mei:rdg[@source = '#' || $source.id])">
+                <xsl:next-match/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:variable name="tokens" select="tokenize(normalize-space(.),' ')" as="xs:string*"/>
+                <xsl:variable name="new.refs" as="xs:string*">
+                    <xsl:for-each select="$tokens">
+                        <xsl:variable name="current.token" select="." as="xs:string"/>
+                        <xsl:value-of select="$core.draft//mei:*[@synch = substring($current.token,2)]/@xml:id"/>
+                    </xsl:for-each>
+                </xsl:variable>
+                <xsl:attribute name="endid" select="'#' || string-join($new.refs,' #')"/>
+            </xsl:otherwise>
+        </xsl:choose>
+        
     </xsl:template>
     
     <!-- /mode compare.phase3 – END -->
