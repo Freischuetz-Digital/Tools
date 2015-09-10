@@ -140,7 +140,7 @@
                 </xsl:variable>
                 
                 <xsl:variable name="compare.phase3">
-                    <xsl:apply-templates select="$compare.phase1" mode="compare.phase3">
+                    <xsl:apply-templates select="$compare.phase2" mode="compare.phase3">
                         <xsl:with-param name="core.draft" select="$compare.phase2" tunnel="yes" as="node()"/>
                         <xsl:with-param name="source.preComp" select="$source.preComp" tunnel="yes" as="node()"/>
                     </xsl:apply-templates>
@@ -3460,7 +3460,7 @@
         <xsl:param name="source.preComp" tunnel="yes" as="node()"/>
         
         <xsl:choose>
-            <xsl:when test="not(ancestor::mei:rdg[@source = '#' || $source.id])">
+            <xsl:when test="not(ancestor::mei:rdg[@source = ('#' || $source.id)])">
                 <xsl:next-match/>
             </xsl:when>
             <xsl:otherwise>
@@ -3485,7 +3485,7 @@
         <xsl:param name="source.preComp" tunnel="yes" as="node()"/>
         
         <xsl:choose>
-            <xsl:when test="not(ancestor::mei:rdg[@source = '#' || $source.id])">
+            <xsl:when test="not(ancestor::mei:rdg[@source = ('#' || $source.id)])">
                 <xsl:next-match/>
             </xsl:when>
             <xsl:otherwise>
