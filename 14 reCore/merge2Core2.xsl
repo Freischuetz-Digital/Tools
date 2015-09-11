@@ -3502,6 +3502,30 @@
         
     </xsl:template>
     
+    <!-- removing unnecessary empty reading -->
+    <xsl:template match="mei:rdg" mode="compare.phase3">
+        <xsl:choose>
+            <!-- if rdg references other source(s), copy it -->
+            <xsl:when test="not(@source = ('#' || $source.id))">
+                <xsl:next-match/>
+            </xsl:when>
+            <!-- if rdg contains something, copy it -->
+            <xsl:when test="child::mei:*">
+                <xsl:next-match/>
+            </xsl:when>
+            <!-- when there is no sibling rdg that refers to the current source, copy it -->
+            <xsl:when test="not(preceding-sibling::mei:rdg[$source.id = tokenize(replace(@source,'#',''),' ')]
+                or following-sibling::mei:rdg[$source.id = tokenize(replace(@source,'#',''),' ')]
+                )">
+                <xsl:next-match/>
+            </xsl:when>
+            <!-- rdg refers to the current source, has no content, and the current source offers another alternative: 
+                in essence, the current rdg is unnecessary and should go away…
+                -->
+            <xsl:otherwise/>
+        </xsl:choose>
+    </xsl:template>
+    
     <!-- /mode compare.phase3 – END -->
     
     <!-- mode source.cleanup – START -->
