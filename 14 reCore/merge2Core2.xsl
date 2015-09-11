@@ -2070,14 +2070,12 @@
         <xsl:param name="controlEvent" as="node()"/>
         <xsl:param name="file" as="node()"/>
         
-        <xsl:variable name="start.measure" select="$controlEvent/ancestor::mei:measure/@n" as="xs:string"/>
-        
         <xsl:choose>
             <!-- profile slurs -->
             <xsl:when test="local-name($controlEvent) = 'slur'">
                 <xsl:variable name="start.elem" select="$file//mei:*[@xml:id = $controlEvent/substring(@startid,2)]" as="node()?"/>
                 <xsl:variable name="end.elem" select="$file//mei:*[@xml:id = $controlEvent/substring(@endid,2)]" as="node()?"/>
-                
+                <xsl:variable name="start.measure" select="$start.elem/ancestor::mei:measure/@n" as="xs:string?"/>
                 <xsl:choose>
                     <!-- check if both start and end are available -->
                     <xsl:when test="exists($start.elem) and exists($end.elem)">
@@ -2100,7 +2098,7 @@
                         
                     </xsl:when>
                     <xsl:otherwise>
-                        <xsl:message terminate="yes" select="'ERROR: slur ' || $controlEvent/@xml:id || ' in measure ' || $start.measure || ' has incorrect @startid and / or @endid. Please check! (processing stopped)'"/>
+                        <xsl:message terminate="yes" select="'ERROR: slur ' || $controlEvent/@xml:id || ' in measure ' || $controlEvent/ancestor::mei:measure/@n || ' has incorrect @startid and / or @endid. Please check! (processing stopped)'"/>
                     </xsl:otherwise>
                 </xsl:choose>
             </xsl:when>
@@ -2109,6 +2107,7 @@
                 
                 <xsl:variable name="start.tstamp" select="$controlEvent/@tstamp" as="xs:string"/>
                 <xsl:variable name="end.tstamp" select="$controlEvent/substring-after(@tstamp2,'m+')" as="xs:string"/>
+                <xsl:variable name="start.measure" select="$controlEvent/ancestor::mei:measure/@n" as="xs:string"/>
                 <xsl:variable name="end.measure" as="xs:string">
                     <xsl:choose>
                         <xsl:when test="starts-with($controlEvent/@tstamp2,'0m+')">
@@ -2142,6 +2141,7 @@
             </xsl:when>
             <xsl:when test="local-name($controlEvent) = 'dynam'">
                 
+                <xsl:variable name="start.measure" select="$controlEvent/ancestor::mei:measure/@n" as="xs:string"/>
                 <xsl:variable name="value" select="$controlEvent/replace(normalize-space(string-join(.//text(),'')),'[\.:]','')"/>
                 <!-- normalize values -->
                 <xsl:variable name="normalizedValue" as="xs:string">
@@ -2288,7 +2288,7 @@
             <xsl:when test="local-name($controlEvent) = 'dir'">
                 
                 <xsl:variable name="quot" as="xs:string">'</xsl:variable>
-                
+                <xsl:variable name="start.measure" select="$controlEvent/ancestor::mei:measure/@n" as="xs:string"/>
                 <xsl:variable name="value" select="replace($controlEvent/replace(lower-case(normalize-space(string-join(.//text(),''))),'[\.:]',''),$quot,'')"/>
                 
                 <xsl:variable name="normalizedValue" as="xs:string">
