@@ -2215,6 +2215,9 @@
                         <xsl:when test="$value = 'mf'">
                             <xsl:value-of select="'mf'"/>
                         </xsl:when>
+                        <xsl:when test="$value = 'mfo'">
+                            <xsl:value-of select="'mf'"/>
+                        </xsl:when>                        
                         <xsl:when test="$value = 'mfr'">
                             <xsl:value-of select="'mf'"/>
                         </xsl:when>
