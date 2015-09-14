@@ -84,10 +84,17 @@
     <xsl:variable name="core" select="doc(concat($basePath,'/14%20reCored/core_mov',$mov.n,'.xml'))//mei:mei" as="node()"/>
     
     <xsl:variable name="all.sources.so.far" as="xs:string+">
-        <xsl:value-of select="substring-before(substring-after($core//mei:change[@n = '1']//mei:p,'from '),'_mov')"/>
-        <xsl:for-each select="$core//mei:change[@n != '1']">
-            <xsl:value-of select="substring-before(substring-after(.//mei:p,'from '),'_mov')"/>
-        </xsl:for-each>
+        
+        <xsl:variable name="change" select="$core//mei:change[last()]" as="node()"/>
+        <xsl:if test="not(starts-with(normalize-space($change//mei:p//string-join(text(),'')),'Merged ')) and $change//mei:ptr[starts-with(@target,'merge2Core2.xsl_')]">
+            <xsl:message terminate="yes" select="'ERROR: The last change element in the core file does not provide information about the source merged so far. Please check!'"/>
+        </xsl:if>
+        
+        <xsl:variable name="complete.string" select="normalize-space(string-join($change//mei:p//text(),''))" as="xs:string"/>
+        <xsl:variable name="old.sources" select="tokenize(substring-before(substring-after($complete.string,' movement now contains '),' plus '),', ')" as="xs:string+"/>
+        <xsl:variable name="newest.source" select="substring-after($complete.string,concat(string-join($old.sources,', '),' plus '))" as="xs:string"/>
+        
+        <xsl:sequence select="$old.sources, $newest.source"/>
     </xsl:variable>
     
     
@@ -233,7 +240,7 @@
                 </xsl:result-document>
                 
                 <!-- core file -->
-                <xsl:result-document href="{concat($basePath,'/14%20reCored/core_mov',$mov.n,'.','xml')}">
+                <xsl:result-document href="{concat($basePath,'/14%20reCored/_core_mov',$mov.n,'.','xml')}">
                     <xsl:apply-templates select="$newCore" mode="core.cleanup"/>
                 </xsl:result-document>
             </xsl:otherwise>
