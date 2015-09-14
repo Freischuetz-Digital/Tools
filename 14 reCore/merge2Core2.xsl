@@ -642,15 +642,15 @@
                 <xsl:variable name="matching.source.id" select="$full.source.comparisons/descendant-or-self::source[count(.//diff) = 0]/@id" as="xs:string+"/>
                 <!-- debug message -->
                 <xsl:if test="count($matching.source.id) gt 1">
-                    <xsl:message terminate="yes" select="'Error: source ' || $source.id || ' matches the text of the following sources in '|| $core.staff.raw/@xml:id || ', even though they differ: ' || string-join($matching.source.id,', ')"/>
+                    <xsl:message terminate="no" select="'WARNING: source ' || $source.id || ' matches the text of the following sources in '|| $core.staff.raw/@xml:id || ', even though they differ: ' || string-join($matching.source.id,', ')"/>
                 </xsl:if>
                 
-                <xsl:message select="'   INFO: ' || $source.staff.raw/@xml:id || ' has the same text as ' || $matching.source.id || '. No special treatment scheduled.'"/>
+                <xsl:message select="'   INFO: ' || $source.staff.raw/@xml:id || ' has the same text as ' || $matching.source.id[1] || '. No special treatment scheduled.'"/>
                 
                 <xsl:copy>
                     <xsl:apply-templates select="node() | @*" mode="merge">
-                        <xsl:with-param name="matching.source.id" select="$matching.source.id" as="xs:string" tunnel="yes"/>
-                        <xsl:with-param name="corresp" select="$full.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                        <xsl:with-param name="matching.source.id" select="$matching.source.id[1]" as="xs:string" tunnel="yes"/>
+                        <xsl:with-param name="corresp" select="$full.source.comparisons/descendant-or-self::source[@id = $matching.source.id[1]]//sameas" as="node()*" tunnel="yes"/>
                     </xsl:apply-templates>    
                 </xsl:copy>
             </xsl:when>
@@ -927,10 +927,10 @@
                                             
                                             
                                             <!-- deal with area preceding the first existing app -->
-                                            <xsl:variable name="first.diff.tstamp" select="number(($existing.ranges/descendant-or-self::range)[1]/@tstamp.first)" as="xs:double"/>
+                                            <xsl:variable name="first.diff.tstamp" select="min($existing.ranges/descendant-or-self::range/number(@tstamp.first))" as="xs:double"/>
                                             <xsl:choose>
                                                 <!-- no spotted differences precede the first existing app -->
-                                                <xsl:when test="not($closest.rdg.layer.diffs//diffGroup/number(@tstamp.first) lt $first.diff.tstamp)">
+                                                <xsl:when test="not(min($closest.rdg.layer.diffs//diffGroup/number(@tstamp.first)) lt $first.diff.tstamp)">
                                                     
                                                     <xsl:apply-templates select="$core.layer/child::mei:*" mode="get.by.tstamps">
                                                         <xsl:with-param name="before.tstamp" select="$first.diff.tstamp" as="xs:double" tunnel="yes"/>
