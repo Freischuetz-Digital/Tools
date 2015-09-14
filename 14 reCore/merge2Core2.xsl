@@ -86,7 +86,7 @@
     <xsl:variable name="all.sources.so.far" as="xs:string+">
         
         <xsl:variable name="change" select="$core//mei:change[last()]" as="node()"/>
-        <xsl:if test="not(starts-with(normalize-space($change//mei:p//string-join(text(),'')),'Merged ')) and $change//mei:ptr[starts-with(@target,'merge2Core2.xsl_')]">
+        <xsl:if test="not(starts-with(normalize-space(string-join($change//mei:p//text(),'')),'Merged ')) and $change//mei:ptr[starts-with(@target,'merge2Core2.xsl_')]">
             <xsl:message terminate="yes" select="'ERROR: The last change element in the core file does not provide information about the source merged so far. Please check!'"/>
         </xsl:if>
         
