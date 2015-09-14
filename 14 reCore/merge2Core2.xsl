@@ -2323,6 +2323,9 @@
                         <xsl:when test="$value = 'a piacere, mà con tutto la forza'">
                             <xsl:value-of select="'aPiacereMaConTuttaLaForza'"/>
                         </xsl:when>
+                        <xsl:when test="$value = 'a piacere ma con tutta la forza'">
+                            <xsl:value-of select="'aPiacereMaConTuttaLaForza'"/>
+                        </xsl:when>
                         <xsl:when test="$value = 'a tempo'">
                             <xsl:value-of select="'aTempo'"/>
                         </xsl:when>
