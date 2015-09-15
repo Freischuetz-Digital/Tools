@@ -92,7 +92,7 @@
         
         <xsl:variable name="complete.string" select="normalize-space(string-join($change//mei:p//text(),''))" as="xs:string"/>
         <xsl:variable name="old.sources" select="tokenize(substring-before(substring-after($complete.string,' movement now contains '),' plus '),', ')" as="xs:string+"/>
-        <xsl:variable name="newest.source" select="substring-after($complete.string,concat(string-join($old.sources,', '),' plus '))" as="xs:string"/>
+        <xsl:variable name="newest.source" select="substring-before(substring-after($complete.string,concat(string-join($old.sources,', '),' plus ')),'.')" as="xs:string"/>
         
         <xsl:sequence select="$old.sources, $newest.source"/>
     </xsl:variable>
