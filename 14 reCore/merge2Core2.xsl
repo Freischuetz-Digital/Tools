@@ -3518,6 +3518,38 @@
     <!-- removing unnecessary empty reading -->
     <xsl:template match="mei:rdg" mode="compare.phase3">
         <xsl:choose>
+            <!-- controlEvent clarification -->
+            
+            <!-- when this rdg indicates a missing controlEvent in older sources, 
+                and the current source also lacks this controlEvent, just add a 
+                reference to the current source here, and remove the newly created
+                rdg (next xsl:when) -->
+            <xsl:when test="parent::mei:app/parent::mei:measure and not(child::mei:*) 
+                and not(@source = ('#' || $source.id))
+                and following-sibling::mei:rdg[not(child::mei:*) 
+                and @source = ('#' || $source.id)
+                and starts-with(@xml:id,'x')
+                ]">
+                <xsl:copy>
+                    <xsl:apply-templates select="@* except @source" mode="#current"/>
+                    <xsl:attribute name="source" select="@source || ' #' || $source.id"/>
+                    <xsl:apply-templates select="node()" mode="#current"/>
+                </xsl:copy>
+            </xsl:when>
+            <xsl:when test="parent::mei:app/parent::mei:measure and not(child::mei:*)
+                and @source = ('#' || $source.id)
+                and preceding-sibling::mei:rdg[not(child::mei:*)]
+                and starts-with(@xml:id,'x')
+                and following-sibling::mei:*[1][local-name() = 'annot'
+                and child::mei:p[contains(text(), ' has no corresponding ')]
+                and starts-with(@xml:id,'j')
+                ]">
+                <!-- do nothing -->
+            </xsl:when>
+            
+            
+            <!-- other, event-related cases -->
+            
             <!-- if rdg references other source(s), copy it -->
             <xsl:when test="not(@source = ('#' || $source.id))">
                 <xsl:next-match/>
@@ -3526,6 +3558,7 @@
             <xsl:when test="child::mei:*">
                 <xsl:next-match/>
             </xsl:when>
+            
             <!-- when there is no sibling rdg that refers to the current source, copy it -->
             <xsl:when test="not(preceding-sibling::mei:rdg[$source.id = tokenize(replace(@source,'#',''),' ')]
                 or following-sibling::mei:rdg[$source.id = tokenize(replace(@source,'#',''),' ')]
@@ -3535,6 +3568,66 @@
             <!-- rdg refers to the current source, has no content, and the current source offers another alternative: 
                 in essence, the current rdg is unnecessary and should go away…
                 -->
+            <xsl:otherwise/>
+        </xsl:choose>
+    </xsl:template>
+    
+    <!-- remove annots for missing slurs if they can be merged into existing rdgs-->
+    <xsl:template match="mei:annot" mode="compare.phase3">
+        <xsl:choose>
+            <xsl:when test="not(starts-with(@xml:id,'j'))">
+                <xsl:next-match/>
+            </xsl:when>
+            <xsl:when test="not(@type = 'diff')">
+                <xsl:next-match/>
+            </xsl:when>
+            <xsl:when test="not(child::ce.diff[@type = 'missing.ce' and @missing.in = 'source'])">
+                <xsl:next-match/>
+            </xsl:when>
+            <xsl:when test="not(child::mei:p[contains(text(),' has no corresponding ')])">
+                <xsl:next-match/>
+            </xsl:when>
+            <xsl:when test="not(count(preceding-sibling::mei:rdg[not(child::mei:*)]) gt 1)">
+                <xsl:next-match/>
+            </xsl:when>
+            <xsl:when test="not(preceding-sibling::mei:rdg[1][starts-with(@xml:id,'x')
+                and @source = ('#' || $source.id)
+                and not(child::mei:*)
+                ])">
+                <xsl:next-match/>
+            </xsl:when>
+            <!-- all conditions are matched, so remove this annot -->
+            <xsl:otherwise>
+                <xsl:message select="'INFO: Simplified encoding of controlEvents in ' || ancestor::mei:measure/@n"/>
+            </xsl:otherwise>
+        </xsl:choose>
+    </xsl:template>
+    
+    <xsl:template match="hiccup[@reason = 'control']" mode="compare.phase3">
+        <xsl:variable name="annot" select="preceding-sibling::*[1]" as="node()"/>
+        <xsl:variable name="rdg" select="preceding-sibling::*[2]" as="node()"/>
+        <xsl:choose>
+            <xsl:when test="not(text() = 'added a rdg')">
+                <xsl:next-match/>
+            </xsl:when>
+            <xsl:when test="not(local-name($annot) = 'annot' and local-name($rdg) = 'rdg')">
+                <xsl:next-match/>
+            </xsl:when>
+            <xsl:when test="not(starts-with($annot/@xml:id,'j') and starts-with($rdg/@xml:id,'x'))">
+                <xsl:next-match/>
+            </xsl:when>
+            <xsl:when test="not($annot//mei:p[contains(text(),' has no corresponding ')])">
+                <xsl:next-match/>
+            </xsl:when>
+            <xsl:when test="$rdg/child::mei:*">
+                <xsl:next-match/>
+            </xsl:when>
+            <xsl:when test="not($rdg/preceding-sibling::mei:rdg[not(child::mei:*)])">
+                <xsl:next-match/>
+            </xsl:when>
+            <xsl:when test="not($rdg/@source = ('#' || $source.id))">
+                <xsl:next-match/>
+            </xsl:when>
             <xsl:otherwise/>
         </xsl:choose>
     </xsl:template>
