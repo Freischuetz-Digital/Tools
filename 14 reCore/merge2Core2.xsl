@@ -3524,11 +3524,12 @@
                 and the current source also lacks this controlEvent, just add a 
                 reference to the current source here, and remove the newly created
                 rdg (next xsl:when) -->
-            <xsl:when test="parent::mei:app/parent::mei:measure and not(child::mei:*) 
+            <xsl:when test="parent::mei:app/parent::mei:measure 
+                and not(child::mei:*) 
                 and not(@source = ('#' || $source.id))
-                and following-sibling::mei:rdg[not(child::mei:*) 
-                and @source = ('#' || $source.id)
-                and starts-with(@xml:id,'x')
+                and parent::mei:app/child::mei:rdg[not(child::mei:*) 
+                    and @source = ('#' || $source.id)
+                    and starts-with(@xml:id,'x')
                 ]">
                 <xsl:copy>
                     <xsl:apply-templates select="@* except @source" mode="#current"/>
@@ -3536,13 +3537,16 @@
                     <xsl:apply-templates select="node()" mode="#current"/>
                 </xsl:copy>
             </xsl:when>
-            <xsl:when test="parent::mei:app/parent::mei:measure and not(child::mei:*)
+            <xsl:when test="parent::mei:app/parent::mei:measure 
+                and not(child::mei:*)
                 and @source = ('#' || $source.id)
-                and preceding-sibling::mei:rdg[not(child::mei:*)]
+                and parent::mei:app/child::mei:rdg[not(child::mei:*)
+                    and not(@source = ('#' || $source.id))
+                ]
                 and starts-with(@xml:id,'x')
                 and following-sibling::mei:*[1][local-name() = 'annot'
-                and child::mei:p[contains(text(), ' has no corresponding ')]
-                and starts-with(@xml:id,'j')
+                    and child::mei:p[contains(text(), ' has no corresponding ')]
+                    and starts-with(@xml:id,'j')
                 ]">
                 <!-- do nothing -->
             </xsl:when>
@@ -3587,7 +3591,7 @@
             <xsl:when test="not(child::mei:p[contains(text(),' has no corresponding ')])">
                 <xsl:next-match/>
             </xsl:when>
-            <xsl:when test="not(count(preceding-sibling::mei:rdg[not(child::mei:*)]) gt 1)">
+            <xsl:when test="not(count(parent::mei:app/child::mei:rdg[not(child::mei:*)]) gt 1)">
                 <xsl:next-match/>
             </xsl:when>
             <xsl:when test="not(preceding-sibling::mei:rdg[1][starts-with(@xml:id,'x')
@@ -3622,7 +3626,7 @@
             <xsl:when test="$rdg/child::mei:*">
                 <xsl:next-match/>
             </xsl:when>
-            <xsl:when test="not($rdg/preceding-sibling::mei:rdg[not(child::mei:*)])">
+            <xsl:when test="not(count($rdg/parent::mei:app/child::mei:rdg[not(child::mei:*)]) gt 1)">
                 <xsl:next-match/>
             </xsl:when>
             <xsl:when test="not($rdg/@source = ('#' || $source.id))">
