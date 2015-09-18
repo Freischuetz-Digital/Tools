@@ -862,7 +862,7 @@
                                     </xsl:variable>
                                     
                                     <!-- identify matching source -->
-                                    <xsl:variable name="matching.source.id" select="$layer.source.comparisons/descendant-or-self::source[count(.//diff) = 0][1]/@id" as="xs:string?"/>
+                                    <xsl:variable name="matching.source.id" select="($layer.source.comparisons/descendant-or-self::source[count(.//diff) = 0])[1]/@id" as="xs:string?"/>
                                     
                                     <!--<!-\- debug message -\->
                                     <xsl:if test="count($matching.source.id) gt 1">
