@@ -862,14 +862,14 @@
                                     </xsl:variable>
                                     
                                     <!-- identify matching source -->
-                                    <xsl:variable name="matching.source.id" select="$layer.source.comparisons/descendant-or-self::source[count(.//diff) = 0]/@id" as="xs:string?"/>
+                                    <xsl:variable name="matching.source.id" select="$layer.source.comparisons/descendant-or-self::source[count(.//diff) = 0][1]/@id" as="xs:string?"/>
                                     
-                                    <!-- debug message -->
+                                    <!--<!-\- debug message -\->
                                     <xsl:if test="count($matching.source.id) gt 1">
                                         <xsl:message terminate="yes" select="'Error: source ' || $source.id || ' matches the text of the following sources in '|| $core.staff.raw/@xml:id || ', even though they should differ: ' || string-join($matching.source.id,', ')"/>
-                                        <!-- this error is probably incorrect, as multiple sources might share the same variant without causing a problem. 
-                                            Probably I only need to ensure that $matching.source.id takes the id of just the first matching source, and that's it… -->
-                                    </xsl:if>
+                                        <!-\- this error is probably incorrect, as multiple sources might share the same variant without causing a problem. 
+                                            Probably I only need to ensure that $matching.source.id takes the id of just the first matching source, and that's it… -\->
+                                    </xsl:if>-->
                                     
                                     <xsl:choose>
                                         <!-- the new source has the same text as another source for this layer -->
