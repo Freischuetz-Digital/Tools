@@ -29,7 +29,7 @@
     <xsl:param name="checkSetup" select="'true'" as="xs:string"/>
     
     <!-- version of this stylesheet -->
-    <xsl:variable name="xsl.version" select="'1.0.1'"/>
+    <xsl:variable name="xsl.version" select="'1.0.2'"/>
     
     <!-- gets global variables based on some general principles of the Freischütz Data Model -->
     <xsl:variable name="source.id" select="if(contains(/mei:mei/@xml:id,'_')) then(substring-before(/mei:mei/@xml:id,'_')) else(/mei:mei/@xml:id)" as="xs:string"/>
@@ -288,15 +288,16 @@
     </xsl:template>
     
     <!-- core-specific information to be removed from the source -->
-    <xsl:template match="@pname" mode="source"/>
-    <xsl:template match="@dur" mode="source"/>
-    <xsl:template match="@dots" mode="source"/>
-    <xsl:template match="@oct" mode="source"/>
-    <xsl:template match="@accid" mode="source"/>
-    <xsl:template match="@accid.ges" mode="source"/>
-    <xsl:template match="@grace" mode="source"/>
-    <xsl:template match="@stem.mod" mode="source"/>
-    <xsl:template match="mei:layer//@tstamp" mode="source"/>
+    <xsl:template match="@pname[not(ancestor::mei:orig) and not(ancestor::mei:sic) and not(ancestor::mei:abbr)]" mode="source"/>
+    <xsl:template match="@dur[not(ancestor::mei:orig) and not(ancestor::mei:sic) and not(ancestor::mei:abbr)]" mode="source"/>
+    <xsl:template match="@dots[not(ancestor::mei:orig) and not(ancestor::mei:sic) and not(ancestor::mei:abbr)]" mode="source"/>
+    <xsl:template match="@oct[not(ancestor::mei:orig) and not(ancestor::mei:sic) and not(ancestor::mei:abbr)]" mode="source"/>
+    <xsl:template match="@artic[not(ancestor::mei:orig) and not(ancestor::mei:sic) and not(ancestor::mei:abbr)]" mode="source"/>
+    <xsl:template match="@accid[not(ancestor::mei:orig) and not(ancestor::mei:sic) and not(ancestor::mei:abbr)]" mode="source"/>
+    <xsl:template match="@accid.ges[not(ancestor::mei:orig) and not(ancestor::mei:sic) and not(ancestor::mei:abbr)]" mode="source"/>
+    <xsl:template match="@grace[not(ancestor::mei:orig) and not(ancestor::mei:sic) and not(ancestor::mei:abbr)]" mode="source"/>
+    <xsl:template match="@stem.mod[not(ancestor::mei:orig) and not(ancestor::mei:sic) and not(ancestor::mei:abbr)]" mode="source"/>
+    <xsl:template match="mei:layer//@tstamp[not(ancestor::mei:orig) and not(ancestor::mei:sic) and not(ancestor::mei:abbr)]" mode="source"/>
     
     <!-- ***CORE*MODE************************************* -->
         

@@ -59,7 +59,7 @@
     <xsl:output method="xml" indent="yes"/>
     
     <!-- version of this stylesheet -->
-    <xsl:variable name="xsl.version" select="'1.0.0'"/>
+    <xsl:variable name="xsl.version" select="'1.0.1'"/>
     
     <!-- gets global variables based on some general principles of the Freischütz Data Model -->
     <xsl:variable name="source.id" select="substring-before(/mei:mei/@xml:id,'_')" as="xs:string"/>
@@ -85,16 +85,24 @@
     
     <xsl:variable name="all.sources.so.far" as="xs:string+">
         
-        <xsl:variable name="change" select="$core//mei:change[last()]" as="node()"/>
-        <xsl:if test="not(starts-with(normalize-space(string-join($change//mei:p//text(),'')),'Merged ')) and $change//mei:ptr[starts-with(@target,'merge2Core2.xsl_')]">
-            <xsl:message terminate="yes" select="'ERROR: The last change element in the core file does not provide information about the source merged so far. Please check!'"/>
-        </xsl:if>
-        
-        <xsl:variable name="complete.string" select="normalize-space(string-join($change//mei:p//text(),''))" as="xs:string"/>
-        <xsl:variable name="old.sources" select="tokenize(substring-before(substring-after($complete.string,' movement now contains '),' plus '),', ')" as="xs:string+"/>
-        <xsl:variable name="newest.source" select="substring-before(substring-after($complete.string,concat(string-join($old.sources,', '),' plus ')),'.')" as="xs:string"/>
-        
-        <xsl:sequence select="$old.sources, $newest.source"/>
+        <xsl:choose>
+            <xsl:when test="count($core//mei:change) = 1 and $core//mei:change//mei:ptr[starts-with(@target,'setupNewCore.xsl')]">
+                <xsl:variable name="full.text" select="normalize-space(string-join($core//mei:change//mei:p//text(),''))" as="xs:string"/>
+                <xsl:value-of select="substring-before(substring-after($full.text,' from '),'_')"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:variable name="change" select="$core//mei:change[last()]" as="node()"/>
+                <xsl:if test="not(starts-with(normalize-space(string-join($change//mei:p//text(),'')),'Merged ')) and $change//mei:ptr[starts-with(@target,'merge2Core2.xsl_')]">
+                    <xsl:message terminate="yes" select="'ERROR: The last change element in the core file does not provide information about the source merged so far. Please check!'"/>
+                </xsl:if>
+                
+                <xsl:variable name="complete.string" select="normalize-space(string-join($change//mei:p//text(),''))" as="xs:string"/>
+                <xsl:variable name="old.sources" select="tokenize(substring-before(substring-after($complete.string,' movement now contains '),' plus '),', ')" as="xs:string+"/>
+                <xsl:variable name="newest.source" select="substring-before(substring-after($complete.string,concat(string-join($old.sources,', '),' plus ')),'.')" as="xs:string"/>
+                
+                <xsl:sequence select="$old.sources, $newest.source"/>
+            </xsl:otherwise>
+        </xsl:choose>
     </xsl:variable>
     
     
@@ -190,7 +198,7 @@
             </xsl:when>
             
             <!-- check if all hiccups are resolved -->
-            <xsl:when test="$protocol.file//*[local-name() = 'hiccup']">
+            <xsl:when test="$protocol.file//*[local-name() = 'hiccup' or @hiccup]">
                 <!-- debug -->
                 <xsl:message terminate="no" select="'INFO: second round with merge2Core2.xsl to merge ' || $source.id || ' into the core of mov' || $mov.n || '. Examining protocol file at ' || concat($basePath,'/14%20reCored/',$source.id,'/core_mov',$mov.n,'+',$source.id,'-protocol','.xml')"/>
                 <xsl:message select="' '"/>
@@ -355,6 +363,9 @@
     <xsl:template match="mei:facsimile" mode="source.preComp"/>
     <xsl:template match="@facs" mode="source.preComp"/>
     <xsl:template match="@corresp" mode="source.preComp"/>
+    <xsl:template match="@fermata" mode="source.preComp">
+        <xsl:attribute name="fermata" select="'above'"/>
+    </xsl:template>
     <xsl:template match="mei:space/@n" mode="source.preComp"/>
     
     <!-- /mode source.preComp – END -->
@@ -829,6 +840,7 @@
                             <!-- if the above assumption is not correct and different @n need to be allowed, this whole processing needs to be revised. Maybe a manual resolution is more appropriate then? -->
                         </xsl:if>
                         
+                        
                         <xsl:copy>
                             <xsl:apply-templates select="@*" mode="#current"/>
                             
@@ -936,7 +948,7 @@
                                                     <xsl:apply-templates select="$core.layer/child::mei:*" mode="get.by.tstamps">
                                                         <xsl:with-param name="before.tstamp" select="$first.diff.tstamp" as="xs:double" tunnel="yes"/>
                                                         <xsl:with-param name="matching.source.id" select="$closest.source.id" as="xs:string" tunnel="yes"/>
-                                                        <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                        <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $closest.source.id]//sameas" as="node()*" tunnel="yes"/>
                                                     </xsl:apply-templates>
                                                     
                                                 </xsl:when>
@@ -983,7 +995,7 @@
                                                                 <xsl:apply-templates select="$source.layer/child::mei:*" mode="get.by.tstamps">
                                                                     <xsl:with-param name="from.tstamp" select="number($current.diffGroup/@tstamp.first)" as="xs:double" tunnel="yes"/>
                                                                     <xsl:with-param name="to.tstamp" select="number($current.diffGroup/@tstamp.last)" as="xs:double" tunnel="yes"/>
-                                                                    <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                                    <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $closest.source.id]//sameas" as="node()*" tunnel="yes"/>
                                                                     <xsl:with-param name="needs.fresh.id" select="true()" as="xs:boolean" tunnel="yes"/>
                                                                 </xsl:apply-templates>
                                                                 
@@ -1013,7 +1025,7 @@
                                                                 <xsl:apply-templates select="$core.layer/child::mei:*" mode="get.by.tstamps">
                                                                     <xsl:with-param name="after.tstamp" select="number($current.diffGroup/@tstamp.last)" as="xs:double" tunnel="yes"/>
                                                                     <xsl:with-param name="before.tstamp" select="number($relevant.diffs[($current.pos + 1)]/@tstamp.first)" as="xs:double" tunnel="yes"/>
-                                                                    <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                                    <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $closest.source.id]//sameas" as="node()*" tunnel="yes"/>
                                                                     <xsl:with-param name="matching.source.id" select="$closest.source.id" as="xs:string" tunnel="yes"/>
                                                                 </xsl:apply-templates>
                                                             </xsl:when>
@@ -1022,7 +1034,7 @@
                                                                 <xsl:apply-templates select="$core.layer/child::mei:*" mode="get.by.tstamps">
                                                                     <xsl:with-param name="after.tstamp" select="number($current.diffGroup/@tstamp.last)" as="xs:double" tunnel="yes"/>
                                                                     <xsl:with-param name="before.tstamp" select="$first.diff.tstamp" as="xs:double" tunnel="yes"/>
-                                                                    <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                                    <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $closest.source.id]//sameas" as="node()*" tunnel="yes"/>
                                                                     <xsl:with-param name="matching.source.id" select="$closest.source.id" as="xs:string" tunnel="yes"/>
                                                                 </xsl:apply-templates>
                                                             </xsl:otherwise>
@@ -1051,7 +1063,7 @@
                                                         
                                                         <xsl:apply-templates select="$current.app" mode="#current">
                                                             <xsl:with-param name="matching.source" select="$closest.source.id" as="xs:string" tunnel="yes"/>
-                                                            <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                            <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $closest.source.id]//sameas" as="node()*" tunnel="yes"/>
                                                         </xsl:apply-templates>
                                                         
                                                         <xsl:apply-templates select="$current.app/following-sibling::mei:annot[1]" mode="#current"/>
@@ -1079,7 +1091,7 @@
                                                                 <xsl:apply-templates select="$source.layer/child::mei:*" mode="get.by.tstamps">
                                                                     <xsl:with-param name="from.tstamp" select="number($current.diffGroup/@tstamp.first)" as="xs:double" tunnel="yes"/>
                                                                     <xsl:with-param name="to.tstamp" select="number($current.diffGroup/@tstamp.last)" as="xs:double" tunnel="yes"/>
-                                                                    <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                                    <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $closest.source.id]//sameas" as="node()*" tunnel="yes"/>
                                                                     <xsl:with-param name="needs.fresh.id" select="true()" as="xs:boolean" tunnel="yes"/>
                                                                 </xsl:apply-templates>
                                                                 
@@ -1107,7 +1119,7 @@
                                                                 <xsl:apply-templates select="$source.layer/child::mei:*" mode="get.by.tstamps">
                                                                     <xsl:with-param name="from.tstamp" select="number($current.range/@tstamp.first)" as="xs:double" tunnel="yes"/>
                                                                     <xsl:with-param name="to.tstamp" select="number($current.range/@tstamp.last)" as="xs:double" tunnel="yes"/>
-                                                                    <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                                    <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $closest.source.id]//sameas" as="node()*" tunnel="yes"/>
                                                                 </xsl:apply-templates>
                                                             </source>
                                                             <protocol closest.source.id="{$closest.source.id}">
@@ -1138,8 +1150,9 @@
                                                                     <xsl:with-param name="after.tstamp" select="$current.range/number(@tstamp.last)" as="xs:double" tunnel="yes"/>
                                                                     <xsl:with-param name="before.tstamp" select="$next.start" as="xs:double" tunnel="yes"/>
                                                                     <xsl:with-param name="matching.source.id" select="$closest.source.id" as="xs:string" tunnel="yes"/>
-                                                                    <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                                    <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $closest.source.id]//sameas" as="node()*" tunnel="yes"/>
                                                                 </xsl:apply-templates>
+                                                                
                                                             </xsl:when>
                                                             <!-- there are diffs in here -->
                                                             <xsl:otherwise>
@@ -1182,7 +1195,7 @@
                                                                             <xsl:apply-templates select="$source.layer/child::mei:*" mode="get.by.tstamps">
                                                                                 <xsl:with-param name="from.tstamp" select="number($current.diffGroup/@tstamp.first)" as="xs:double" tunnel="yes"/>
                                                                                 <xsl:with-param name="to.tstamp" select="number($current.diffGroup/@tstamp.last)" as="xs:double" tunnel="yes"/>
-                                                                                <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                                                <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $closest.source.id]//sameas" as="node()*" tunnel="yes"/>
                                                                                 <xsl:with-param name="needs.fresh.id" select="true()" as="xs:boolean" tunnel="yes"/>
                                                                             </xsl:apply-templates>
                                                                             
@@ -1211,7 +1224,7 @@
                                                                             <xsl:apply-templates select="$core.layer/child::mei:*" mode="get.by.tstamps">
                                                                                 <xsl:with-param name="after.tstamp" select="number($current.diffGroup/@tstamp.last)" as="xs:double" tunnel="yes"/>
                                                                                 <xsl:with-param name="before.tstamp" select="number($relevant.diffs[($current.pos + 1)]/@tstamp.first)" as="xs:double" tunnel="yes"/>
-                                                                                <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                                                <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $closest.source.id]//sameas" as="node()*" tunnel="yes"/>
                                                                                 <xsl:with-param name="matching.source.id" select="$closest.source.id" as="xs:string" tunnel="yes"/>
                                                                             </xsl:apply-templates>
                                                                         </xsl:when>
@@ -1220,7 +1233,7 @@
                                                                             <xsl:apply-templates select="$core.layer/child::mei:*" mode="get.by.tstamps">
                                                                                 <xsl:with-param name="after.tstamp" select="number($current.diffGroup/@tstamp.last)" as="xs:double" tunnel="yes"/>
                                                                                 <xsl:with-param name="before.tstamp" select="$next.start" as="xs:double" tunnel="yes"/>
-                                                                                <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                                                <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $closest.source.id]//sameas" as="node()*" tunnel="yes"/>
                                                                                 <xsl:with-param name="matching.source.id" select="$closest.source.id" as="xs:string" tunnel="yes"/>
                                                                             </xsl:apply-templates>
                                                                         </xsl:otherwise>
@@ -1246,7 +1259,7 @@
                                                                 <xsl:apply-templates select="$core.layer/child::mei:*" mode="get.by.tstamps">
                                                                     <xsl:with-param name="after.tstamp" select="$current.range/number(@tstamp.last)" as="xs:double" tunnel="yes"/>
                                                                     <xsl:with-param name="matching.source.id" select="$closest.source.id" as="xs:string" tunnel="yes"/>
-                                                                    <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                                    <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $closest.source.id]//sameas" as="node()*" tunnel="yes"/>
                                                                 </xsl:apply-templates>
                                                             </xsl:when>
                                                             <!-- there are diffs in here -->
@@ -1290,7 +1303,7 @@
                                                                             <xsl:apply-templates select="$source.layer/child::mei:*" mode="get.by.tstamps">
                                                                                 <xsl:with-param name="from.tstamp" select="number($current.diffGroup/@tstamp.first)" as="xs:double" tunnel="yes"/>
                                                                                 <xsl:with-param name="to.tstamp" select="number($current.diffGroup/@tstamp.last)" as="xs:double" tunnel="yes"/>
-                                                                                <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                                                <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $closest.source.id]//sameas" as="node()*" tunnel="yes"/>
                                                                                 <xsl:with-param name="needs.fresh.id" select="true()" as="xs:boolean" tunnel="yes"/>
                                                                             </xsl:apply-templates>
                                                                             
@@ -1318,7 +1331,7 @@
                                                                             <xsl:apply-templates select="$core.layer/child::mei:*" mode="get.by.tstamps">
                                                                                 <xsl:with-param name="after.tstamp" select="number($current.diffGroup/@tstamp.last)" as="xs:double" tunnel="yes"/>
                                                                                 <xsl:with-param name="before.tstamp" select="number($relevant.diffs[($current.pos + 1)]/@tstamp.first)" as="xs:double" tunnel="yes"/>
-                                                                                <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                                                <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $closest.source.id]//sameas" as="node()*" tunnel="yes"/>
                                                                                 <xsl:with-param name="matching.source.id" select="$closest.source.id" as="xs:string" tunnel="yes"/>
                                                                             </xsl:apply-templates>
                                                                         </xsl:when>
@@ -1326,7 +1339,7 @@
                                                                         <xsl:otherwise>
                                                                             <xsl:apply-templates select="$core.layer/child::mei:*" mode="get.by.tstamps">
                                                                                 <xsl:with-param name="after.tstamp" select="number($current.diffGroup/@tstamp.last)" as="xs:double" tunnel="yes"/>
-                                                                                <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $matching.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                                                <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $closest.source.id]//sameas" as="node()*" tunnel="yes"/>
                                                                                 <xsl:with-param name="matching.source.id" select="$closest.source.id" as="xs:string" tunnel="yes"/>
                                                                             </xsl:apply-templates>
                                                                         </xsl:otherwise>
@@ -1896,64 +1909,36 @@
         
         <xsl:variable name="this.id" select="."/>
         
-        <xsl:if test="$this.id = 'c4a17efcc-5654-4fcb-a903-f042ae4f94a9'">
-            <xsl:message select="'–––––––––––DRIN–––––––––––––'"/>
-        </xsl:if>
-        
         <xsl:choose>
             <!-- dealing with element from core -->
             <xsl:when test="$this.id = $corresp/descendant-or-self::sameas/@core and not($needs.fresh.id)">
                 <xsl:copy-of select="."/>
-                <xsl:attribute name="synch" select="$corresp/descendant-or-self::sameas[@core = $this.id]/@source"/>
-                <xsl:if test="$this.id = 'c4a17efcc-5654-4fcb-a903-f042ae4f94a9'">
-                    <xsl:message select="'–––––––––––1–––––––––––––'"/>
-                </xsl:if>
+                <xsl:attribute name="synch" select="$corresp/descendant-or-self::sameas[@core = $this.id]/@source"/>                
             </xsl:when>
             <xsl:when test="$this.id = $corresp/descendant-or-self::sameas/@core and $needs.fresh.id">
                 <xsl:attribute name="xml:id" select="'z'||uuid:randomUUID()"/>
                 <xsl:attribute name="synch" select="$corresp/descendant-or-self::sameas[@core = $this.id]/@source"/>
-                <xsl:if test="$this.id = 'c4a17efcc-5654-4fcb-a903-f042ae4f94a9'">
-                    <xsl:message select="'–––––––––––2–––––––––––––'"/>
-                </xsl:if>
             </xsl:when>
             <!-- dealing with element from source -->
             <xsl:when test="$this.id = $corresp/descendant-or-self::sameas[number(@diffs) = 0]/@source">
                 <xsl:attribute name="xml:id" select="$corresp/descendant-or-self::sameas[@source = $this.id]/@core"/>
                 <xsl:attribute name="synch" select="$this.id"/>
-                <xsl:if test="$this.id = 'c4a17efcc-5654-4fcb-a903-f042ae4f94a9'">
-                    <xsl:message select="'–––––––––––3–––––––––––––'"/>
-                </xsl:if>
             </xsl:when>
             <xsl:when test="$this.id = $corresp/descendant-or-self::sameas[number(@diffs) gt 0]/@source">
                 <xsl:attribute name="xml:id" select="'p'||uuid:randomUUID()"/>
                 <xsl:attribute name="synch" select="$this.id"/>
-                <xsl:if test="$this.id = 'c4a17efcc-5654-4fcb-a903-f042ae4f94a9'">
-                    <xsl:message select="'–––––––––––4–––––––––––––'"/>
-                </xsl:if>
             </xsl:when>
             <xsl:when test="not(starts-with(ancestor::mei:staff/@xml:id,'core_'))">
                 <xsl:attribute name="xml:id" select="'c'||uuid:randomUUID()"/>
                 <xsl:attribute name="synch" select="$this.id"/>
-                <xsl:if test="$this.id = 'c4a17efcc-5654-4fcb-a903-f042ae4f94a9'">
-                    <xsl:message select="'–––––––––––5–––––––––––––'"/>
-                </xsl:if>
             </xsl:when>
             <xsl:when test="$needs.fresh.id">
                 <xsl:attribute name="xml:id" select="'p'||uuid:randomUUID()"/>
-                <xsl:if test="$this.id = 'c4a17efcc-5654-4fcb-a903-f042ae4f94a9'">
-                    <xsl:message select="'–––––––––––6–––––––––––––'"/>
-                </xsl:if>
             </xsl:when>
             <xsl:otherwise>
                 <xsl:copy-of select="."/>
-                <xsl:if test="$this.id = 'c4a17efcc-5654-4fcb-a903-f042ae4f94a9'">
-                    <xsl:message select="'–––––––––––7–––––––––––––'"/>
-                </xsl:if>
             </xsl:otherwise>
         </xsl:choose>
-        <xsl:if test="$this.id = 'c4a17efcc-5654-4fcb-a903-f042ae4f94a9'">
-            <xsl:message select="'–––––––––––RAUS–––––––––––––'"/>
-        </xsl:if>
     </xsl:template>
     
     <!-- /mode merge – END -->
@@ -2224,6 +2209,9 @@
                         <xsl:when test="$value = 'decresc'">
                             <xsl:value-of select="'decresc'"/>
                         </xsl:when>
+                        <xsl:when test="$value = 'decres'">
+                            <xsl:value-of select="'decresc'"/>
+                        </xsl:when>
                         <xsl:when test="$value = 'decrescendo'">
                             <xsl:value-of select="'decresc'"/>
                         </xsl:when>
@@ -2359,10 +2347,22 @@
                         <xsl:when test="$value = '1mo solo'">
                             <xsl:value-of select="'primoSolo'"/>
                         </xsl:when>
+                        <xsl:when test="$value = 'imo solo'">
+                            <xsl:value-of select="'primoSolo'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'solo io'">
+                            <xsl:value-of select="'primoSolo'"/>
+                        </xsl:when>
                         <xsl:when test="$value = '2do'">
                             <xsl:value-of select="'secondo'"/>
                         </xsl:when>
                         <xsl:when test="$value = '2do solo'">
+                            <xsl:value-of select="'secondoSolo'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = '2o solo'">
+                            <xsl:value-of select="'secondoSolo'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'iid solo'">
                             <xsl:value-of select="'secondoSolo'"/>
                         </xsl:when>
                         <xsl:when test="$value = 'a 2'">
@@ -3765,23 +3765,39 @@
         <xsl:variable name="synch" select="$core.draft//mei:*[@synch= $this.id]" as="node()?"/>
         <xsl:attribute name="xml:id" select="$this.id"/>
         
-        <xsl:if test="$synch">
-            <xsl:attribute name="sameas" select="'#' || $synch/@xml:id"/>
-        </xsl:if>
-            
+        <xsl:choose>
+            <xsl:when test="ancestor::mei:orig">
+                <xsl:next-match/>
+            </xsl:when>
+            <xsl:when test="ancestor::mei:sic">
+                <xsl:next-match/>
+            </xsl:when>
+            <xsl:when test="ancestor::mei:abbr">
+                <xsl:next-match/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:if test="exists(parent::mei:*/@tstamp) and not(exists($synch))">
+                    <xsl:message terminate="no" select="local-name(parent::mei:*) || ' in measure ' || ancestor::mei:measure/@n || ' lacks a synch (id: ' || $this.id || ')'"/>
+                </xsl:if>
+                
+                <xsl:if test="$synch">
+                    <xsl:attribute name="sameas" select="'#' || $synch/@xml:id"/>
+                </xsl:if>
+            </xsl:otherwise>
+        </xsl:choose>
     </xsl:template>
     
     <!-- core-specific information to be removed from source -->
-    <xsl:template match="@pname" mode="source.cleanup"/>
-    <xsl:template match="@dur" mode="source.cleanup"/>
-    <xsl:template match="@dots" mode="source.cleanup"/>
-    <xsl:template match="@oct" mode="source.cleanup"/>
-    <xsl:template match="@accid" mode="source.cleanup"/>
-    <xsl:template match="@accid.ges" mode="source.cleanup"/>
-    <xsl:template match="@artic" mode="source.cleanup"/>
-    <xsl:template match="@grace" mode="source.cleanup"/>
-    <xsl:template match="@stem.mod" mode="source.cleanup"/>
-    <xsl:template match="mei:layer//@tstamp" mode="source.cleanup"/>
+    <xsl:template match="@pname[not(ancestor::mei:orig) and not(ancestor::mei:sic) and not(ancestor::mei:abbr)]" mode="source.cleanup"/>
+    <xsl:template match="@dur[not(ancestor::mei:orig) and not(ancestor::mei:sic) and not(ancestor::mei:abbr)]" mode="source.cleanup"/>
+    <xsl:template match="@dots[not(ancestor::mei:orig) and not(ancestor::mei:sic) and not(ancestor::mei:abbr)]" mode="source.cleanup"/>
+    <xsl:template match="@oct[not(ancestor::mei:orig) and not(ancestor::mei:sic) and not(ancestor::mei:abbr)]" mode="source.cleanup"/>
+    <xsl:template match="@accid[not(ancestor::mei:orig) and not(ancestor::mei:sic) and not(ancestor::mei:abbr)]" mode="source.cleanup"/>
+    <xsl:template match="@accid.ges[not(ancestor::mei:orig) and not(ancestor::mei:sic) and not(ancestor::mei:abbr)]" mode="source.cleanup"/>
+    <xsl:template match="@artic[not(ancestor::mei:orig) and not(ancestor::mei:sic) and not(ancestor::mei:abbr)]" mode="source.cleanup"/>
+    <xsl:template match="@grace[not(ancestor::mei:orig) and not(ancestor::mei:sic) and not(ancestor::mei:abbr)]" mode="source.cleanup"/>
+    <xsl:template match="@stem.mod[not(ancestor::mei:orig) and not(ancestor::mei:sic) and not(ancestor::mei:abbr)]" mode="source.cleanup"/>
+    <xsl:template match="mei:layer//@tstamp[not(ancestor::mei:orig) and not(ancestor::mei:sic) and not(ancestor::mei:abbr)]" mode="source.cleanup"/>
     
     <xsl:template match="mei:appInfo" mode="source.cleanup">
         <xsl:copy>
