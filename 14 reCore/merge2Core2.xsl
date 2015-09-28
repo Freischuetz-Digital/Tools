@@ -173,10 +173,10 @@
                 </xsl:result-document>
                 
                 <!-- stop processing if not all elements of the source are synched to the core -->
-                <xsl:if test="some $elem in $source.preComp//mei:*[(@tstamp and ancestor::mei:layer and not(local-name() = 'chord')) or (local-name() = 'note') or (local-name() = ('slur','hairpin','dynam','dir') and not(ancestor::mei:orig))]
+                <xsl:if test="some $elem in $source.preComp//mei:*[(@tstamp and ancestor::mei:layer and not(local-name() = ('chord','space'))) or (local-name() = 'note') or (local-name() = ('slur','hairpin','dynam','dir') and not(ancestor::mei:orig))]
                     satisfies not($compare.phase3//mei:*[@synch = $elem/@xml:id])">
                     
-                    <xsl:variable name="missing.elements" select="$source.preComp//mei:*[((@tstamp and ancestor::mei:layer and not(local-name() = 'chord')) or (local-name() = 'note') or (local-name() = ('slur','hairpin','dynam','dir') and not(ancestor::mei:orig))) and not(@xml:id = $compare.phase3//@synch)]" as="node()+"/>
+                    <xsl:variable name="missing.elements" select="$source.preComp//mei:*[((@tstamp and ancestor::mei:layer and not(local-name() = ('chord','space'))) or (local-name() = 'note') or (local-name() = ('slur','hairpin','dynam','dir') and not(ancestor::mei:orig))) and not(@xml:id = $compare.phase3//@synch)]" as="node()+"/>
                     
                     <xsl:message select="' '"/>
                     <xsl:message select="'Attention: Not all elements from the source could be synched properly. Please make sure the following elements are covered while resolving the protocol: '"/>
@@ -206,9 +206,9 @@
             </xsl:when>
             
             <!-- check if all elements in the source are referenced properly -->
-            <xsl:when test="some $elem in $protocol.file//source.preComp//mei:*[(@tstamp and ancestor::mei:layer and not(local-name() = 'chord')) or (local-name() = 'note') or (local-name() = ('slur','hairpin','dynam','dir') and not(ancestor::mei:orig))]
-                satisfies ($protocol.file//coreDraft//mei:*[@synch = $elem/@xml:id])">
-                <xsl:variable name="missing.elements" select="$protocol.file//source.preComp//mei:*[((@tstamp and ancestor::mei:layer and not(local-name() = 'chord')) or (local-name() = 'note') or (local-name() = ('slur','hairpin','dynam','dir') and not(ancestor::mei:orig))) and not(@xml:id = $protocol.file//coreDraft//@synch)]" as="node()+"/>
+            <xsl:when test="some $elem in $protocol.file//source.preComp//mei:*[(@tstamp and ancestor::mei:layer and not(local-name() = ('chord','space'))) or (local-name() = 'note') or (local-name() = ('slur','hairpin','dynam','dir') and not(ancestor::mei:orig))]
+                satisfies not($protocol.file//coreDraft//mei:*[@synch = $elem/@xml:id])">
+                <xsl:variable name="missing.elements" select="$protocol.file//source.preComp//mei:*[((@tstamp and ancestor::mei:layer and not(local-name() = ('chord','space'))) or (local-name() = 'note') or (local-name() = ('slur','hairpin','dynam','dir') and not(ancestor::mei:orig))) and not(@xml:id = $protocol.file//coreDraft//@synch)]" as="node()+"/>
                 
                 <!-- debug -->
                 <xsl:message terminate="no" select="'INFO: second round with merge2Core2.xsl to merge ' || $source.id || ' into the core of mov' || $mov.n || '. Examining protocol file at ' || concat($basePath,'/14%20reCored/',$source.id,'/core_mov',$mov.n,'+',$source.id,'-protocol','.xml')"/>
@@ -436,6 +436,8 @@
         <xsl:copy-of select="."/>
         <xsl:attribute name="pnum" select="local:getMIDIpitch(parent::mei:note,if($trans.semi) then(number($trans.semi) cast as xs:integer) else(0))"/>
     </xsl:template>
+    
+    <xsl:template match="mei:space" mode="profiling.prep"/>
     
     <xsl:template match="comment()" mode="profiling.prep" priority="1"/>
     
@@ -2350,6 +2352,9 @@
                         <xsl:when test="$value = 'imo solo'">
                             <xsl:value-of select="'primoSolo'"/>
                         </xsl:when>
+                        <xsl:when test="$value = 'pmo solo'">
+                            <xsl:value-of select="'primoSolo'"/>
+                        </xsl:when>
                         <xsl:when test="$value = 'solo io'">
                             <xsl:value-of select="'primoSolo'"/>
                         </xsl:when>
@@ -3749,7 +3754,7 @@
     <xsl:template match="@sameas" mode="source.cleanup">
         <!-- preserve only @sameas for measures -->
         <xsl:choose>
-            <xsl:when test="ancestor::mei:measure">
+            <xsl:when test="parent::mei:measure">
                 <xsl:next-match/>
             </xsl:when>
             <xsl:otherwise/>
@@ -3762,7 +3767,7 @@
         <xsl:param name="core.draft" as="node()" tunnel="yes"/>
         
         <xsl:variable name="this.id" select="string(.)"/>
-        <xsl:variable name="synch" select="$core.draft//mei:*[@synch= $this.id]" as="node()?"/>
+        <xsl:variable name="synch" select="$core.draft//mei:*[@synch=$this.id]" as="node()?"/>
         <xsl:attribute name="xml:id" select="$this.id"/>
         
         <xsl:choose>
@@ -3773,6 +3778,15 @@
                 <xsl:next-match/>
             </xsl:when>
             <xsl:when test="ancestor::mei:abbr">
+                <xsl:next-match/>
+            </xsl:when>
+            <xsl:when test="parent::mei:space">
+                <xsl:next-match/>
+            </xsl:when>
+            <xsl:when test="parent::mei:chord">
+                <xsl:next-match/>
+            </xsl:when>
+            <xsl:when test="parent::mei:cpMark">
                 <xsl:next-match/>
             </xsl:when>
             <xsl:otherwise>
