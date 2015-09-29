@@ -964,6 +964,16 @@
                                                         <xsl:variable name="current.diffGroup" select="." as="node()"/>
                                                         <xsl:variable name="current.pos" select="position()" as="xs:integer"/>
                                                         
+                                                        <!-- deal with material preceding the first difference -->
+                                                        <xsl:if test="$current.pos = 1">
+                                                            <xsl:apply-templates select="$core.layer/child::mei:*" mode="get.by.tstamps">
+                                                                <xsl:with-param name="after.tstamp" select="0" as="xs:double" tunnel="yes"/>
+                                                                <xsl:with-param name="before.tstamp" select="$current.diffGroup/@tstamp.first" as="xs:double" tunnel="yes"/>
+                                                                <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $closest.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                                <xsl:with-param name="matching.source.id" select="$closest.source.id" as="xs:string" tunnel="yes"/>
+                                                            </xsl:apply-templates>
+                                                        </xsl:if>
+                                                        
                                                         <xsl:message select="'      INFO: Inserting new app from tstamp ' || $current.diffGroup/@tstamp.first || ' to ' || $current.diffGroup/@tstamp.last"/>
                                                         
                                                         <xsl:variable name="first.rdg.id" select="'c'||uuid:randomUUID()" as="xs:string"/>
@@ -1053,7 +1063,7 @@
                                                 <xsl:variable name="current.range" select="." as="node()"/>
                                                 <xsl:variable name="current.pos" select="position()" as="xs:integer"/>
                                                 
-                                                <xsl:variable name="current.app" select="$core.layer//mei:app[min(.//mei:*[@tstamp]/number(@tstamp)) = $current.range/@tstamp.first]" as="node()"/>
+                                                <xsl:variable name="current.app" select="($core.layer//mei:app[min(.//mei:*[@tstamp]/number(@tstamp)) = $current.range/@tstamp.first])[1]" as="node()"/>
                                                 
                                                 <!-- decide if a new diff is inside this app -->
                                                 <xsl:choose>
