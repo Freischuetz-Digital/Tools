@@ -2422,6 +2422,9 @@
                         <xsl:when test="$value = 'allegretto grazioso'">
                             <xsl:value-of select="'allegrettoGrazioso'"/>
                         </xsl:when>
+                        <xsl:when test="$value = 'allegretto grizioso'">
+                            <xsl:value-of select="'allegrettoGrazioso'"/>
+                        </xsl:when>
                         <xsl:when test="$value = 'allegro'">
                             <xsl:value-of select="'allegro'"/>
                         </xsl:when>
