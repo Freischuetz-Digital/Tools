@@ -1303,6 +1303,24 @@
                                                                         <hiccup reason="nesting" elem.name="{local-name($grouping.ancestor)}" elem.id="{$grouping.ancestor/@xml:id}">nesting is probably broken, element may have been encoded multiple times</hiccup>
                                                                     </xsl:if>
                                                                     
+                                                                    <xsl:variable name="start.tstamp" as="xs:double">
+                                                                        <xsl:choose>
+                                                                            <xsl:when test="$current.pos = 1">
+                                                                                <xsl:value-of select="$current.range/number(@tstamp.last)"/>
+                                                                            </xsl:when>
+                                                                            <xsl:otherwise>
+                                                                                <xsl:value-of select="number($relevant.diffs[($current.pos - 1)]/@tstamp.last)"/>
+                                                                            </xsl:otherwise>
+                                                                        </xsl:choose>
+                                                                    </xsl:variable>
+                                                                    
+                                                                    <xsl:apply-templates select="$core.layer/child::mei:*" mode="get.by.tstamps">
+                                                                        <xsl:with-param name="after.tstamp" select="$start.tstamp" as="xs:double" tunnel="yes"/>
+                                                                        <xsl:with-param name="before.tstamp" select="number($current.diffGroup/@tstamp.first)" as="xs:double" tunnel="yes"/>
+                                                                        <xsl:with-param name="matching.source.id" select="$closest.source.id" as="xs:string" tunnel="yes"/>
+                                                                        <xsl:with-param name="corresp" select="$layer.source.comparisons/descendant-or-self::source[@id = $closest.source.id]//sameas" as="node()*" tunnel="yes"/>
+                                                                    </xsl:apply-templates>
+                                                                    
                                                                     <app xmlns="http://www.music-encoding.org/ns/mei" xml:id="{'a'||uuid:randomUUID()}">
                                                                         <rdg xml:id="{$first.rdg.id}" source="#{string-join($all.sources.so.far,' #')}">
                                                                             <xsl:apply-templates select="$core.layer/child::mei:*" mode="get.by.tstamps">
