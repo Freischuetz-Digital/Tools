@@ -2159,6 +2159,11 @@
             <!-- profile hairpins -->
             <xsl:when test="local-name($controlEvent) = 'hairpin'">
                 
+                <xsl:if test="not($controlEvent/@tstamp)">
+                    <xsl:message select="$controlEvent"/>
+                    <xsl:message terminate="yes" select="'please check!'"></xsl:message>
+                </xsl:if>
+                
                 <xsl:variable name="start.tstamp" select="$controlEvent/@tstamp" as="xs:string"/>
                 <xsl:variable name="end.tstamp" select="$controlEvent/substring-after(@tstamp2,'m+')" as="xs:string"/>
                 <xsl:variable name="start.measure" select="$controlEvent/ancestor::mei:measure/@n" as="xs:string"/>
@@ -2201,6 +2206,9 @@
                 <xsl:variable name="normalizedValue" as="xs:string">
                     <xsl:choose>         
                         <xsl:when test="$value = 'cres'">
+                            <xsl:value-of select="'cresc'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'crs'">
                             <xsl:value-of select="'cresc'"/>
                         </xsl:when>
                         <xsl:when test="$value = 'cresc'">
