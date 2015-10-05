@@ -2567,6 +2567,9 @@
                         <xsl:when test="$value = 'pizz'">
                             <xsl:value-of select="'pizz'"/>
                         </xsl:when>
+                        <xsl:when test="$value = 'piz'">
+                            <xsl:value-of select="'pizz'"/>
+                        </xsl:when>
                         <xsl:when test="$value = 'pizzo'">
                             <xsl:value-of select="'pizz'"/>
                         </xsl:when>
