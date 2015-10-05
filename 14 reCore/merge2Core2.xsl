@@ -2152,8 +2152,16 @@
                     <!-- check if both start and end are available -->
                     <xsl:when test="exists($start.elem) and exists($end.elem)">
                         
-                        <xsl:variable name="start.tstamp" select="if($start.elem/parent::mei:chord) then($start.elem/parent::mei:chord/@tstamp) else($start.elem/@tstamp)" as="xs:string"/>
-                        <xsl:variable name="end.tstamp" select="if($end.elem/parent::mei:chord) then($end.elem/parent::mei:chord/@tstamp) else($end.elem/@tstamp)" as="xs:string"/>
+                        <xsl:variable name="start.tstamp" select="if($start.elem/parent::mei:chord) then($start.elem/parent::mei:chord/@tstamp) else($start.elem/@tstamp)" as="xs:string?"/>
+                        <xsl:variable name="end.tstamp" select="if($end.elem/parent::mei:chord) then($end.elem/parent::mei:chord/@tstamp) else($end.elem/@tstamp)" as="xs:string?"/>
+                        
+                        <xsl:if test="not($start.tstamp)">
+                            <xsl:message terminate="yes" select="'ERROR: could not determine start.tstamp for ' || local-name($start.elem) || ' with ID ' || $start.elem/@xml:id || ' (measure ' || $start.elem/ancestor::mei:measure/@n || ')'"/>
+                        </xsl:if>
+                        <xsl:if test="not($end.tstamp)">
+                            <xsl:message terminate="yes" select="'ERROR: could not determine end.tstamp for ' || local-name($end.elem) || ' with ID ' || $end.elem/@xml:id || ' (measure ' || $end.elem/ancestor::mei:measure/@n || ')'"/>
+                        </xsl:if>
+                        
                         <xsl:variable name="end.measure" select="$end.elem/ancestor::mei:measure/@n" as="xs:string"/>
                         
                         <!-- debug -->
