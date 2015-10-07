@@ -3817,7 +3817,17 @@
         <xsl:param name="core.draft" as="node()" tunnel="yes"/>
         
         <xsl:variable name="this.id" select="string(.)"/>
-        <xsl:variable name="synch" select="$core.draft//mei:*[@synch=$this.id]" as="node()?"/>
+        <xsl:variable name="synch" select="$core.draft//mei:*[@synch=$this.id]" as="node()*"/>
+        
+        <xsl:if test="count($synch) gt 1">
+            <xsl:message terminate="no" select="'ERROR: Multiple elements seem to synch with element ' || $this.id || ':'"/>
+            <xsl:for-each select="$synch">
+                <xsl:variable name="current.synch" select="." as="node()"/>
+                <xsl:message select="local-name($current.synch) || ' with id ' || $current.synch/@xml:id || ' (measure ' || $current.synch/ancestor::mei:measure/@n || ')'"></xsl:message>
+            </xsl:for-each>
+            <xsl:message terminate="yes" select="'prcessing stopped'"/>
+        </xsl:if>
+        
         <xsl:attribute name="xml:id" select="$this.id"/>
         
         <xsl:choose>
