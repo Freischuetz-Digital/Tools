@@ -2441,6 +2441,9 @@
                         <xsl:when test="$value = 'a tempor'">
                             <xsl:value-of select="'aTempo'"/>
                         </xsl:when>
+                        <xsl:when test="$value = 'a tem'">
+                            <xsl:value-of select="'aTempo'"/>
+                        </xsl:when>
                         <xsl:when test="$value = 'accelerando'">
                             <xsl:value-of select="'accel'"/>
                         </xsl:when>
