@@ -2276,6 +2276,9 @@
                         <xsl:when test="$value = 'poco a poco crescendo'">
                             <xsl:value-of select="'crescPocoAPoco'"/>
                         </xsl:when>
+                        <xsl:when test="$value = 'a poco a poco cres'">
+                            <xsl:value-of select="'crescPocoAPoco'"/>
+                        </xsl:when>
                         <xsl:when test="$value = 'f'">
                             <xsl:value-of select="'f'"/>
                         </xsl:when>
@@ -2405,6 +2408,9 @@
                         <xsl:when test="$value = '2do'">
                             <xsl:value-of select="'secondo'"/>
                         </xsl:when>
+                        <xsl:when test="$value = 'a 2do'">
+                            <xsl:value-of select="'secondo'"/>
+                        </xsl:when>
                         <xsl:when test="$value = '2do solo'">
                             <xsl:value-of select="'secondoSolo'"/>
                         </xsl:when>
@@ -2433,6 +2439,9 @@
                             <xsl:value-of select="'aPiacereMaConTuttaLaForza'"/>
                         </xsl:when>
                         <xsl:when test="$value = 'a piacere ma con tutta la forza'">
+                            <xsl:value-of select="'aPiacereMaConTuttaLaForza'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'a piacere mà con tutta la forza'">
                             <xsl:value-of select="'aPiacereMaConTuttaLaForza'"/>
                         </xsl:when>
                         <xsl:when test="$value = 'a tempo'">
@@ -2495,6 +2504,12 @@
                         <xsl:when test="$value = 'colla parte,'">
                             <xsl:value-of select="'collaParte'"/>
                         </xsl:when>
+                        <xsl:when test="$value = 'col parte'">
+                            <xsl:value-of select="'collaParte'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'coll part'">
+                            <xsl:value-of select="'collaParte'"/>
+                        </xsl:when>
                         <xsl:when test="$value = 'con forza'">
                             <xsl:value-of select="'conForza'"/>
                         </xsl:when>
@@ -2525,6 +2540,12 @@
                         <xsl:when test="$value = 'stringendo e crescendo'">
                             <xsl:value-of select="'cresStringendo'"/>
                         </xsl:when>
+                        <xsl:when test="$value = 'stringendo e cres'">
+                            <xsl:value-of select="'cresStringendo'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'cres e string'">
+                            <xsl:value-of select="'cresStringendo'"/>
+                        </xsl:when>                        
                         <xsl:when test="$value = 'divisi'">
                             <xsl:value-of select="'divisi'"/>
                         </xsl:when>
@@ -2591,6 +2612,9 @@
                         <xsl:when test="$value = 'rect'">
                             <xsl:value-of select="'recit'"/>
                         </xsl:when>
+                        <xsl:when test="$value = 'rec'">
+                            <xsl:value-of select="'recit'"/>
+                        </xsl:when>
                         <xsl:when test="$value = 'ritardando'">
                             <xsl:value-of select="'ritardando'"/>
                         </xsl:when>
@@ -2626,7 +2650,10 @@
                         </xsl:when>
                         <xsl:when test="$value = 'staccato'">
                             <xsl:value-of select="'staccato'"/>
-                        </xsl:when>                        
+                        </xsl:when>                    
+                        <xsl:when test="$value = 'stac'">
+                            <xsl:value-of select="'staccato'"/>
+                        </xsl:when>
                         <xsl:when test="$value = 'tempo'">
                             <xsl:value-of select="'tempo'"/>
                         </xsl:when>
