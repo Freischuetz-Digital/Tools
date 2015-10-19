@@ -24,7 +24,7 @@
     </xsl:template>
     
     <xsl:template match="@tstamp2">
-        <xsl:attribute name="tstamp" select="substring-before(.,'m+') || 'm+' || string((number(substring-after(.,'m+')) - 1) div 2 + 1)"/>
+        <xsl:attribute name="tstamp2" select="substring-before(.,'m+') || 'm+' || string((number(substring-after(.,'m+')) - 1) div 2 + 1)"/>
     </xsl:template>
     
     <xsl:template match="node() | @*">
