@@ -11,15 +11,19 @@
       <xd:p><xd:b>Created on:</xd:b> Nov 10, 2014</xd:p>
       <xd:p><xd:b>Author:</xd:b> Johannes Kepper</xd:p>
       <xd:p>
-        Merge two staves in one.
+        Merge two staves in one. The staff provided with $secondStaff.n is merged into $firstStaff.n
       </xd:p>
     </xd:desc>
   </xd:doc>
   
   <xsl:output method="xml" indent="yes"/>
   
-  <xsl:param name="firstStaff.n" select="1" as="xs:integer"/>
-  <xsl:param name="secondStaff.n" select="2" as="xs:integer"/>
+  <xsl:param name="firstStaff.n" select="4" as="xs:integer"/>
+  <xsl:param name="secondStaff.n" select="5" as="xs:integer"/>
+  
+  <xsl:param name="staff.diff" select="-1" as="xs:integer?"/>
+  <xsl:param name="staff.adjust.above" select="5" as="xs:integer?"/>
+  <xsl:param name="staff.adjust.below" as="xs:integer?"/>
   
   <xsl:variable name="firstStaff.maxLayers" select="max(//mei:staff[@n = $firstStaff.n]/count(./mei:layer))" as="xs:integer"/>
   <xsl:variable name="secondStaff.maxLayers" select="max(//mei:staff[@n = $secondStaff.n]/count(./mei:layer))" as="xs:integer"/>
@@ -32,7 +36,21 @@
       <xsl:message select="'There seem to be measures (' || string-join($potentialConflicts/@xml:id, ', ') || ') in which both staves contain music. Is this correct? Please check the file manually afterwards for any potential conflicts.'"/>
     </xsl:if>
     
-    <xsl:apply-templates mode="firstRun"/>
+    <xsl:variable name="firstRun" as="node()*">
+      <xsl:apply-templates mode="firstRun">
+        <xsl:with-param name="potentialConflicts" select="$potentialConflicts" tunnel="yes" as="node()*"/>
+      </xsl:apply-templates>  
+    </xsl:variable>
+    
+    <xsl:choose>
+      <xsl:when test="$staff.diff and $staff.adjust.above">
+        <xsl:apply-templates select="$firstRun" mode="secondRun"/>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:copy-of select="$firstRun"/>
+      </xsl:otherwise>
+    </xsl:choose>
+    
   </xsl:template>
   
   <xsl:template match="mei:staffDef[ancestor::mei:scoreDef and @n = $firstStaff.n]" mode="firstRun">
@@ -44,8 +62,8 @@
       <xsl:message terminate="yes">There are already layerDefs. Please check manually and improve this stylesheet :-)</xsl:message>
     </xsl:if>
     
-    <xsl:variable name="firstStaff.atts" select="(@* except (@xml:id,@label,@label.abbr, @n))"/>
-    <xsl:variable name="secondStaff.atts" select="$secondStaffDef/(@* except (@xml:id,@label,@label.abbr, @n))"/>
+    <xsl:variable name="firstStaff.atts" select="(@* except (@xml:id,@label,@label.abbr, @n, @trans.diat, @trans.semi))"/>
+    <xsl:variable name="secondStaff.atts" select="$secondStaffDef/(@* except (@xml:id,@label,@label.abbr, @n, @trans.diat, @trans.semi))"/>
     
     <xsl:choose>
       <xsl:when test="(every $att in $firstStaff.atts satisfies $att = $secondStaff.atts) and (every $att in $secondStaff.atts satisfies $att = $firstStaff.atts)">
@@ -58,7 +76,7 @@
             <layerDef xmlns="http://www.music-encoding.org/ns/mei">
               <xsl:variable name="num" select="." as="xs:integer"/>
               <xsl:attribute name="n" select="$num"/>
-              <xsl:apply-templates select="$firstStaffDef/(@label, @label.abbr)"/>
+              <xsl:apply-templates select="$firstStaffDef/(@label, @label.abbr, @trans.diat, @trans.semi)"/>
             </layerDef>
           </xsl:for-each>
           
@@ -66,7 +84,7 @@
             <layerDef xmlns="http://www.music-encoding.org/ns/mei">
               <xsl:variable name="num" select="." as="xs:integer"/>
               <xsl:attribute name="n" select="$num"/>
-              <xsl:apply-templates select="$secondStaffDef/(@label, @label.abbr)"/>
+              <xsl:apply-templates select="$secondStaffDef/(@label, @label.abbr, @trans.diat, @trans.semi)"/>
             </layerDef>
           </xsl:for-each>
           
@@ -156,6 +174,69 @@
       <xsl:apply-templates select="node()"/>
       <xsl:message select="'moved ' || $name || ' in measure/@xml:id=' || $measure.id || ' from staff ' || $secondStaff.n || ' to ' || $firstStaff.n"/>
     </xsl:copy>
+  </xsl:template>
+  
+  <xsl:template match="mei:appInfo" mode="firstRun">
+    <xsl:copy>
+      <xsl:apply-templates select="node() | @*" mode="#current"/>
+      <application xmlns="http://www.music-encoding.org/ns/mei" xml:id="mergeStaves.xsl">
+        <name>mergeStaves.xsl</name>
+        <xsl:comment>This stylesheet merges two staves into one, in order to overcome differences between a Finale file and the original source document.</xsl:comment>
+        <ptr target="https://github.com/Freischuetz-Digital/Tools/blob/develop/100%20manual%20tools/mergeStaves.xsl"/>
+      </application>
+    </xsl:copy>
+  </xsl:template>
+  
+  <xsl:template match="mei:revisionDesc" mode="firstRun">
+    
+    <xsl:param name="potentialConflicts" tunnel="yes" as="node()*"/>
+    
+    <xsl:copy>
+      <xsl:apply-templates select="node() | @*" mode="#current"/>
+      
+      <change xmlns="http://www.music-encoding.org/ns/mei" n="{string(count(child::mei:change) + 1)}">
+        <respStmt>
+          <persName>Johannes Kepper</persName>    
+        </respStmt>
+        <changeDesc>
+          <p>Merged staff <xsl:value-of select="$secondStaff.n"/> into <xsl:value-of select="$firstStaff.n"/>. <xsl:if test="count($potentialConflicts) gt 0">This may have caused conflicts in measures <xsl:value-of select="string-join($potentialConflicts/@xml:id, ', ')"/>.</xsl:if></p>
+        </changeDesc>
+        <date isodate="{substring(string(current-date()),1,10)}"/>
+      </change>
+    </xsl:copy>
+  </xsl:template>
+  
+  <xsl:template match="@staff" mode="secondRun">
+    <xsl:choose>
+      <xsl:when test="exists($staff.adjust.above) and number(.) gt $staff.adjust.above">
+        <xsl:attribute name="staff" select="number(.) + $staff.diff"/>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:next-match/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+  
+  <xsl:template match="mei:staff/@n" mode="secondRun">
+    <xsl:choose>
+      <xsl:when test="exists($staff.adjust.above) and number(.) gt $staff.adjust.above">
+        <xsl:attribute name="n" select="number(.) + $staff.diff"/>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:next-match/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+  
+  <xsl:template match="mei:staffDef/@n" mode="secondRun">
+    <xsl:choose>
+      <xsl:when test="exists($staff.adjust.above) and number(.) gt $staff.adjust.above">
+        <xsl:attribute name="n" select="number(.) + $staff.diff"/>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:next-match/>
+      </xsl:otherwise>
+    </xsl:choose>
   </xsl:template>
   
   <xsl:template match="node() | @*" mode="#all">
