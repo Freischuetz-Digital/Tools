@@ -2546,6 +2546,10 @@
                         <xsl:when test="$value = 'con sordini'">
                             <xsl:value-of select="'conSordini'"/>
                         </xsl:when>
+                        <xsl:when test="$value = 'sordini'">
+                            <xsl:value-of select="'conSordini'"/>
+                        </xsl:when>
+                        
                         <xsl:when test="$value = 'cres e stringendo'">
                             <xsl:value-of select="'cresStringendo'"/>
                         </xsl:when>
