@@ -2140,9 +2140,13 @@
         <xsl:choose>
             <!-- profile slurs -->
             <xsl:when test="local-name($controlEvent) = 'slur'">
-                <xsl:variable name="start.elem" select="$file//mei:*[@xml:id = $controlEvent/substring(@startid,2)]" as="node()?"/>
+                <xsl:variable name="start.elem" select="$file//mei:*[@xml:id = $controlEvent/substring(@startid,2)]" as="node()*"/>
                 <xsl:variable name="end.elem" select="$file//mei:*[@xml:id = $controlEvent/substring(@endid,2)]" as="node()*"/>
                 <xsl:variable name="start.measure" select="$start.elem/ancestor::mei:measure/@n" as="xs:string?"/>
+                
+                <xsl:if test="count($start.elem) gt 1">
+                    <xsl:message terminate="yes" select="'ERROR: The slur with id ' || $controlEvent/@xml:id || ' in measure ' || $start.measure || ' points out that two (or more) elements share an @xml:id, which is: ' || $controlEvent/substring(@startid,2)"/>
+                </xsl:if>
                 
                 <xsl:if test="count($end.elem) gt 1">
                     <xsl:message terminate="yes" select="'ERROR: The slur with id ' || $controlEvent/@xml:id || ' in measure ' || $start.measure || ' points out that two (or more) elements share an @xml:id, which is: ' || $controlEvent/substring(@endid,2)"/>
@@ -2262,6 +2266,9 @@
                             <xsl:value-of select="'decresc'"/>
                         </xsl:when>
                         <xsl:when test="$value = 'decrescendo'">
+                            <xsl:value-of select="'decresc'"/>
+                        </xsl:when>
+                        <xsl:when test="$value = 'decrs'">
                             <xsl:value-of select="'decresc'"/>
                         </xsl:when>
                         <xsl:when test="$value = 'crescendo poco a poco'">
