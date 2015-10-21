@@ -20,7 +20,7 @@
     <xsl:output method="xml" indent="yes"/>
     
     <xsl:param name="source.id" select="'A'" as="xs:string"/>
-    <xsl:param name="mov.n" select="'2'" as="xs:string"/>
+    <xsl:param name="mov.n" select="'12'" as="xs:string"/>
     
     <xsl:variable name="mov.id" select="$source.id || '_mov' || $mov.n" as="xs:string"/>
     <xsl:variable name="repo.path" select="substring-before(document-uri(),'sourcePrep') || 'sourcePrep/'" as="xs:string"/>
@@ -1721,9 +1721,9 @@
         <xsl:if test="not(local-name(parent::mei:*) = ('choice'))">
             <xsl:if test="count($coreDraft//mei:*[@old.id = $ref.id]/@xml:id)">
                 <xsl:message select="'spotted an error with ' || string-join($coreDraft//mei:*[@old.id = $ref.id]/@xml.id,', ') || ', looking for ' || $ref.id"/>
-                <xsl:result-document href="{$repo.path || 'error.xml'}">
+                <!--<xsl:result-document href="{$repo.path || 'error.xml'}">
                     <xsl:copy-of select="$coreDraft"/>
-                </xsl:result-document>
+                </xsl:result-document>-->
             </xsl:if>
             <xsl:attribute name="sameas" select="'freidi-musicCore.xml#' || $coreDraft//mei:*[@old.id = $ref.id]/@xml:id"/>    
         </xsl:if>
