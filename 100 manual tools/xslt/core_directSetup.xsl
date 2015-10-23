@@ -20,7 +20,7 @@
     <xsl:output method="xml" indent="yes"/>
     
     <xsl:param name="source.id" select="'A'" as="xs:string"/>
-    <xsl:param name="mov.n" select="'12'" as="xs:string"/>
+    <xsl:param name="mov.n" select="'13'" as="xs:string"/>
     
     <xsl:variable name="mov.id" select="$source.id || '_mov' || $mov.n" as="xs:string"/>
     <xsl:variable name="repo.path" select="substring-before(document-uri(),'sourcePrep') || 'sourcePrep/'" as="xs:string"/>
@@ -423,20 +423,34 @@
     
     <xsl:template match="@startid" mode="include.music.clean">
         <xsl:variable name="old.start" select="replace(.,'#','')" as="xs:string"/>
-        <xsl:variable name="target" select="ancestor::mei:mdiv//mei:*[@old.id = $old.start]" as="node()?"/>
+        <xsl:variable name="target" select="ancestor::mei:mdiv//mei:*[@old.id = $old.start]" as="node()*"/>
         <xsl:if test="not($target)">
             <xsl:message terminate="yes" select="'ERROR: unable to identify element ' || $old.start || ', which is referenced from a @startid in measure ' || ancestor::mei:measure/@n || '. Processing terminated.'"/>
         </xsl:if>
-        <xsl:attribute name="startid" select="'#' || $target/@xml:id"/>
+        <xsl:if test="count($target) gt 1">
+            <xsl:message terminate="no" select="'WARNING: multiple targets with ' || $old.start || ', which are referenced from a @startid in measure ' || ancestor::mei:measure/@n || '. Processing terminated.'"/>
+            <xsl:for-each select="$target">
+                <xsl:variable name="current.target" select="." as="node()"/>
+                <xsl:message select="'   DEBUG: ' || local-name($current.target) || ' @id=' || $current.target/@old.id || ' in ' || string-join($current.target/ancestor-or-self::mei:*/concat(local-name(),'[',count(preceding-sibling::mei:*) +1,']'),'/')"/>
+            </xsl:for-each>            
+        </xsl:if>        
+        <xsl:attribute name="startid" select="'#' || $target[1]/@xml:id"/>
     </xsl:template>
     
     <xsl:template match="@endid" mode="include.music.clean">
         <xsl:variable name="old.end" select="replace(.,'#','')" as="xs:string"/>
-        <xsl:variable name="target" select="ancestor::mei:mdiv//mei:*[@old.id = $old.end]" as="node()?"/>
+        <xsl:variable name="target" select="ancestor::mei:mdiv//mei:*[@old.id = $old.end]" as="node()*"/>
         <xsl:if test="not($target)">
             <xsl:message terminate="yes" select="'ERROR: unable to identify element ' || $old.end || ', which is referenced from a @startid in measure ' || ancestor::mei:measure/@n || '. Processing terminated.'"/>
         </xsl:if>
-        <xsl:attribute name="endid" select="'#' || $target/@xml:id"/>
+        <xsl:if test="count($target) gt 1">
+            <xsl:message terminate="no" select="'WARNING: multiple targets with ' || $old.end || ', which are referenced from a @endid in measure ' || ancestor::mei:measure/@n || '. Processing terminated.'"/>
+            <xsl:for-each select="$target">
+                <xsl:variable name="current.target" select="." as="node()"/>
+                <xsl:message select="'   DEBUG: ' || local-name($current.target) || ' @id=' || $current.target/@old.id || ' in ' || string-join($current.target/ancestor-or-self::mei:*/concat(local-name(),'[',count(preceding-sibling::mei:*) +1,']'),'/')"/>
+            </xsl:for-each>            
+        </xsl:if>      
+        <xsl:attribute name="endid" select="'#' || $target[1]/@xml:id"/>
     </xsl:template>
     
     <xsl:template match="@old.id" mode="include.music.clean"/>
@@ -1718,15 +1732,37 @@
         <xsl:param name="coreDraft" tunnel="yes"/>
         <xsl:variable name="ref.id" select="."/>
         <xsl:attribute name="xml:id" select="."/>
-        <xsl:if test="not(local-name(parent::mei:*) = ('choice'))">
-            <xsl:if test="count($coreDraft//mei:*[@old.id = $ref.id]/@xml:id)">
-                <xsl:message select="'spotted an error with ' || string-join($coreDraft//mei:*[@old.id = $ref.id]/@xml.id,', ') || ', looking for ' || $ref.id"/>
-                <!--<xsl:result-document href="{$repo.path || 'error.xml'}">
-                    <xsl:copy-of select="$coreDraft"/>
-                </xsl:result-document>-->
-            </xsl:if>
-            <xsl:attribute name="sameas" select="'freidi-musicCore.xml#' || $coreDraft//mei:*[@old.id = $ref.id]/@xml:id"/>    
-        </xsl:if>
+        <xsl:variable name="elem" select="parent::mei:*" as="element()"/>
+        <xsl:variable name="elem.name" select="local-name($elem)" as="xs:string"/>
+        <xsl:choose>
+            <xsl:when test="$elem.name = 'choice'"/>
+            <xsl:when test="$elem.name = 'orig'"/>
+            <xsl:when test="$elem.name = 'reg'"/>
+            <xsl:when test="$elem.name = 'abbr'"/>
+            <xsl:when test="$elem.name = 'expan'"/>
+            <xsl:when test="$elem.name = 'sic'"/>
+            <xsl:when test="$elem.name = 'corr'"/>
+            <xsl:when test="$elem.name = 'tuplet'"/>
+            <xsl:when test="$elem.name = 'beam'"/>
+            <xsl:when test="$elem.name = 'bTrem'"/>
+            <xsl:when test="$elem.name = 'fTrem'"/>
+            <xsl:when test="$elem.name = 'measure'"/>
+            <xsl:when test="$elem.name = 'staff'"/>
+            <xsl:when test="$elem.name = 'verse'"/>
+            <xsl:when test="$elem.name = 'syl'"/>
+            <xsl:when test="$elem.name = 'cpMark'"/>
+            <xsl:when test="$elem/ancestor::mei:orig"/>
+            <xsl:when test="$elem/ancestor::mei:abbr"/>
+            <xsl:when test="$elem/ancestor::mei:sic"/>
+            <xsl:otherwise>
+                
+                <xsl:if test="count($coreDraft//mei:*[@old.id = $ref.id]/@xml:id) = 0">
+                    <xsl:message select="'spotted an error with ' || string-join($coreDraft//mei:*[@old.id = $ref.id]/@xml.id,', ') || ', looking for ' || $ref.id"/>                
+                </xsl:if>
+                <xsl:attribute name="sameas" select="'freidi-musicCore.xml#' || $coreDraft//mei:*[@old.id = $ref.id]/@xml:id"/>    
+            
+            </xsl:otherwise>
+        </xsl:choose>
     </xsl:template>
     
     <!-- all @sameas references will be rewritten by the preceding template, which generates a @sameas for everything with an @xml:id -->
@@ -1769,13 +1805,6 @@
     <xsl:template match="@grace[not(ancestor::mei:orig) and not(ancestor::mei:sic) and not(ancestor::mei:abbr)]" mode="source"/>
     <xsl:template match="@stem.mod[not(ancestor::mei:orig) and not(ancestor::mei:sic) and not(ancestor::mei:abbr)]" mode="source"/>
     <xsl:template match="mei:layer//@tstamp[not(ancestor::mei:orig) and not(ancestor::mei:sic) and not(ancestor::mei:abbr)]" mode="source"/>
-    <xsl:template match="@sameas[ancestor::mei:orig or ancestor::mei:sic or ancestor::mei:abbr]" mode="source"/>
-    <xsl:template match="mei:orig/@sameas" mode="source"/>
-    <xsl:template match="mei:reg/@sameas" mode="source"/>
-    <xsl:template match="mei:abbr/@sameas" mode="source"/>
-    <xsl:template match="mei:expan/@sameas" mode="source"/>
-    <xsl:template match="mei:beam/@sameas" mode="source"/>
-    <xsl:template match="mei:tuplet/@sameas" mode="source"/>
     
     <!-- mode core -->
     
