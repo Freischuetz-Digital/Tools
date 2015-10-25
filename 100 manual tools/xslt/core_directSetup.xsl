@@ -20,7 +20,7 @@
     <xsl:output method="xml" indent="yes"/>
     
     <xsl:param name="source.id" select="'A'" as="xs:string"/>
-    <xsl:param name="mov.n" select="'13'" as="xs:string"/>
+    <xsl:param name="mov.n" select="'2'" as="xs:string"/>
     
     <xsl:variable name="mov.id" select="$source.id || '_mov' || $mov.n" as="xs:string"/>
     <xsl:variable name="repo.path" select="substring-before(document-uri(),'sourcePrep') || 'sourcePrep/'" as="xs:string"/>
@@ -1169,6 +1169,11 @@
                                         <xsl:with-param name="tstamp.last" select="number($local.cpInstructions/@target.tstamp.last)" as="xs:double" tunnel="yes"/>
                                     </xsl:apply-templates>
                                 </abbr>
+                                
+                                <xsl:if test="not(exists($material//mei:staff[@xml:id = $local.cpInstructions/@sourceStaff.id]))">
+                                    <xsl:message select="$local.cpMarks"/>
+                                </xsl:if>
+                                
                                 <expan xml:id="c{uuid:randomUUID()}" evidence="#{$local.cpMarks/@xml:id}">
                                     <xsl:apply-templates select="child::node()" mode="#current">
                                         <xsl:with-param name="relevant.cpInstructions" select="$local.cpInstructions" tunnel="yes" as="node()*"/>
@@ -1461,9 +1466,9 @@
                             $tieStart/ancestor::mei:staff[.//mei:note[@pname = $current.pname and 
                             number(@tstamp) lt number($tieStart/@tstamp) and
                             @accid]]">
-                            <xsl:variable name="accid.ges" select="$tieStart/ancestor::mei:staff//mei:note[@pname = $current.pname and 
+                            <xsl:variable name="accid.ges" select="($tieStart/ancestor::mei:staff//mei:note[@pname = $current.pname and 
                                 number(@tstamp) lt number($tieStart/@tstamp) and
-                                @accid][last()]/@accid" as="xs:string"/>
+                                @accid])[last()]/@accid" as="xs:string"/>
                             
                             <xsl:choose>
                                 <xsl:when test="@accid.ges and string(@accid.ges) != string($accid.ges)">
