@@ -25,7 +25,7 @@
             <instrumentation>
                 <xsl:for-each select="(//mei:score/mei:scoreDef)[1]//mei:staffDef">
                     <xsl:variable name="staffdef" select="." as="node()"/>
-                    <instrVoice xml:id="in{uuid:randomUUID()}" label="" n="{$staffdef/@n}" authURI="http://www.loc.gov/standards/valuelist/marcmusperf.html">
+                    <instrVoice xml:id="in{uuid:randomUUID()}" label="{$staffdef/@label}" n="{$staffdef/@n}" authURI="http://www.loc.gov/standards/valuelist/marcmusperf.html">
                         <xsl:choose>
                             <xsl:when test="$staffdef/@label = 'Clarinetti in B'">
                                 <xsl:attribute name="code" select="'wc'"/>
@@ -220,6 +220,12 @@
                         </xsl:if>
                     </instrVoice>
                 </xsl:for-each>
+                <xsl:comment>the following instrVoice are meant as reserve. If not required, please delete them!</xsl:comment>
+                <instrVoice xml:id="in{uuid:randomUUID()}" label="" code="" authURI="http://www.loc.gov/standards/valuelist/marcmusperf.html"/>
+                <instrVoice xml:id="in{uuid:randomUUID()}" label="" code="" authURI="http://www.loc.gov/standards/valuelist/marcmusperf.html"/>
+                <instrVoice xml:id="in{uuid:randomUUID()}" label="" code="" authURI="http://www.loc.gov/standards/valuelist/marcmusperf.html"/>
+                <instrVoice xml:id="in{uuid:randomUUID()}" label="" code="" authURI="http://www.loc.gov/standards/valuelist/marcmusperf.html"/>
+                <instrVoice xml:id="in{uuid:randomUUID()}" label="" code="" authURI="http://www.loc.gov/standards/valuelist/marcmusperf.html"/>
             </instrumentation>
         </perfMedium>
     </xsl:variable>
