@@ -18,7 +18,7 @@
     <xsl:output method="xml" indent="yes"/>
     
     <xsl:variable name="source.id" select="/mei:mei/@xml:id" as="xs:string"/>
-    <xsl:variable name="mov.id" select="/mei:mdiv/@xml:id" as="xs:string"/>
+    <xsl:variable name="mov.id" select="//mei:mdiv/@xml:id" as="xs:string"/>
     
     <xsl:variable name="perfMedium" as="node()">
         <perfMedium xmlns="http://www.music-encoding.org/ns/mei">
