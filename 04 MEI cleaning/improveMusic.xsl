@@ -25,10 +25,15 @@
     
     <xd:doc scope="component">
         <xd:desc>
-            <xd:p>Define output method as UTH-8 encoded XML with identation.</xd:p>
+            <xd:p>Define output method as UTF-8 encoded XML with identation.</xd:p>
         </xd:desc>
     </xd:doc>
     <xsl:output method="xml" indent="yes" encoding="UTF-8"/>
+    
+    <xd:doc scope="component">
+        <xd:desc>The newSchemaRef parameter defines a new URL for RNG and Schematron schemata; if empty the existing schemaRef will be retained</xd:desc>
+    </xd:doc>
+    <xsl:param name="newSchemaRef">https://raw.githubusercontent.com/music-encoding/music-encoding/MEI2013_v2.1.1/schemata/mei-all.rng</xsl:param>
     
     <xd:doc scope="component">
         <xd:desc>
@@ -204,6 +209,17 @@
             <xsl:attribute name="n" select="$n"/>
             <xsl:apply-templates select="node() | @* except (@xml:id,@n)" mode="#current"/>
         </xsl:copy>
+    </xsl:template>
+    
+    <xd:doc scope="component">
+        <xd:desc>
+            <xd:p>this template takes care that mei:mei element holds meiversion.num</xd:p>
+        </xd:desc>
+    </xd:doc>
+    <xsl:template match="@meiversion.num" mode="lastRun">
+        <xsl:attribute name="meiversion.num">
+            <xsl:value-of select="tokenize(substring-after($newSchemaRef,'MEI2013_v'),'/')[1]"/>
+        </xsl:attribute>
     </xsl:template>
     
     <xd:doc scope="component">
@@ -748,7 +764,7 @@
                 <xsl:element name="changeDesc" namespace="http://www.music-encoding.org/ns/mei">
                     <xsl:variable name="text">
                         Content of <xsl:value-of select="$fileName"/> processed with <xsl:element name="ref" namespace="http://www.music-encoding.org/ns/mei">
-                          <xsl:attribute name="target" select="concat('https://github.com/Freischuetz-Digital/Tools/blob/',$FreiDi-Tools_version,'/04%20MEI%20cleaning/improveMusic.xsl')"/>improveMusic.xsl</xsl:element> from Freischütz Digital Tools <xsl:value-of select="$FreiDi-Tools_version"/> in order to resolve mei:bTrems, mei:fTrems, intermediary mei:scoreDefs and mei:staffDef, transform mei:artic and mei:accid to respective attributes, etc.</xsl:variable>
+                          <xsl:attribute name="target" select="concat('https://github.com/Detmolder-Hoftheater/Tools/blob/',$FreiDi-Tools_version,'/04%20MEI%20cleaning/improveMusic.xsl')"/>improveMusic.xsl</xsl:element> from Freischütz Digital Tools <xsl:value-of select="$FreiDi-Tools_version"/> in order to resolve mei:bTrems, mei:fTrems, intermediary mei:scoreDefs and mei:staffDef, transform mei:artic and mei:accid to respective attributes, etc.</xsl:variable>
                     
                     <xsl:element name="p" namespace="http://www.music-encoding.org/ns/mei">
                         <xsl:value-of select="normalize-space($text)"/>
@@ -783,15 +799,22 @@
     </xd:doc>
     <xsl:template match="processing-instruction('xml-model')" mode="lastRun">
         <xsl:choose>
-            <xsl:when test="contains(.,'relaxng')">
-                <xsl:processing-instruction name="xml-model">href="../../../schemata/rng/freidi-schema-musicSource.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"</xsl:processing-instruction>
+          <xsl:when test="$newSchemaRef!=''">
+              <xsl:choose>
+                <xsl:when test="contains(.,'relaxng')">
+                    <xsl:processing-instruction name="xml-model"><xsl:text>href="</xsl:text><xsl:value-of select="$newSchemaRef"/><xsl:text>" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"</xsl:text></xsl:processing-instruction>
+                </xsl:when>
+                <xsl:when test="contains(.,'schematron')">
+                    <xsl:processing-instruction name="xml-model"><xsl:text>href="</xsl:text><xsl:value-of select="$newSchemaRef"/><xsl:text>" type="application/xml" schematypens="http://purl.oclc.org/dsdl/schematron"</xsl:text></xsl:processing-instruction>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:apply-templates select="." mode="#current"/>
+                </xsl:otherwise>
+              </xsl:choose>
             </xsl:when>
-            <xsl:when test="contains(.,'schematron')">
-                <xsl:processing-instruction name="xml-model">href="../../../schemata/rng/freidi-schema-musicSource.rng" type="application/xml" schematypens="http://purl.oclc.org/dsdl/schematron"</xsl:processing-instruction>
-            </xsl:when>
-            <xsl:otherwise>
-                <xsl:apply-templates select="." mode="#current"/>
-            </xsl:otherwise>
+          <xsl:otherwise>
+            <xsl:copy/>
+          </xsl:otherwise>
         </xsl:choose>
     </xsl:template>
     
