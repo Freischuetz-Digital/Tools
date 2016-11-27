@@ -761,6 +761,12 @@
         </xsl:copy>
     </xsl:template>
     
+    <xsl:template match="mei:rest[@dur='' and count(parent::mei:layer/mei:*)=1 and count(ancestor::mei:staff/mei:layer) = 1]" mode="lastRun">
+        <xsl:element name="mRest" namespace="http://www.music-encoding.org/ns/mei">
+            <xsl:attribute name="xml:id" select="generate-id()"></xsl:attribute>
+        </xsl:element>
+    </xsl:template>
+    
     <xsl:template match="mei:mRest/@dur" mode="lastRun"/>
   
     <xsl:template match="mei:mSpace/@dur" mode="lastRun"/>
